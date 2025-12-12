@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
   title: "Next.js Chatbot Template",
   description: "Next.js chatbot template using the AI SDK.",
+  <link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#d97706" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="apple-touch-icon" href="/images/icon-192.png" />
 };
 
 export const viewport = {
