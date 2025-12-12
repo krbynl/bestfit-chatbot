@@ -1,0 +1,35 @@
+{
+  "name": "Coach BFC - AI Fitness Coach",
+  "short_name": "Coach BFC",
+  "description": "Your personal AI fitness coach with voice chat and memory",
+  "start_url": "/voice",
+  "display": "standalone",
+  "background_color": "#1a1512",
+  "theme_color": "#d97706",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Start Voice Chat",
+      "short_name": "Voice",
+      "description": "Start a voice conversation",
+      "url": "/voice",
+      "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
