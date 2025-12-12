@@ -8,13 +8,19 @@ import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Next.js Chatbot Template",
-  description: "Next.js chatbot template using the AI SDK.",
-  <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#d97706" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="apple-touch-icon" href="/images/icon-192.png" />
+  title: "Coach BFC - AI Fitness Coach",
+  description: "Your personal AI fitness coach with voice chat and memory",
+  manifest: "/manifest.json",
+  themeColor: "#d97706",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Coach BFC",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport = {
