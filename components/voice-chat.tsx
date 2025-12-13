@@ -468,7 +468,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
               <Send size={20} />
             </button>
           </form>
-        )}
+     )}
+        
+        {/* Disclaimer */}
+        <p className="text-center text-xs mt-3 px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
+          🤖 BFC AI is very smart, not perfect — Please confirm important info.
+        </p>
       </div>
     </div>
   );
