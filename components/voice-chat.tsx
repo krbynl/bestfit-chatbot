@@ -270,14 +270,14 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         }}
       >
         <div className="flex items-center gap-3">
-          <div 
-            className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg"
+      <div 
+            className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg overflow-hidden p-1"
             style={{
               background: 'linear-gradient(135deg, #550000 0%, #BE5103 100%)',
               boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)'
             }}
           >
-            <span className="text-xl">🏃</span>
+            <img src="/images/icon-192.png" alt="BFC" className="w-full h-full object-contain" />
           </div>
           <div>
             <h2 className="text-lg font-bold" style={{ color: '#F5E6D3' }}>Best Fit Coach</h2>
@@ -325,15 +325,15 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       <div className="relative flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center py-12">
-            <div 
-              className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center"
+           <div 
+              className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center overflow-hidden p-2"
               style={{
                 background: 'linear-gradient(135deg, rgba(85, 0, 0, 0.4) 0%, rgba(190, 81, 3, 0.3) 100%)',
                 border: '2px solid rgba(190, 81, 3, 0.4)',
                 boxShadow: '0 8px 32px rgba(190, 81, 3, 0.2)'
               }}
             >
-              <span className="text-5xl">🏃</span>
+              <img src="/images/icon-192.png" alt="Best Fit Coach" className="w-full h-full object-contain" />
             </div>
             <p className="text-xl mb-2 font-semibold" style={{ color: '#F5E6D3' }}>Welcome to Best Fit Coach!</p>
             <p style={{ color: '#A89080' }}>Type a message or start a voice conversation</p>
