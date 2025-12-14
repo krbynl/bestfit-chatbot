@@ -127,8 +127,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         content: '🎤 Processing...',
         timestamp: new Date(),
       }]);
-
-      const response = await wordpressClient.sendVoiceMessage(audioBlob, 'nova');
+const response = await wordpressClient.sendVoiceMessage(audioBlob, 'nova');
       if (!response.success) throw new Error(response.error || 'Failed to process voice');
 
       setMessages(prev => 
