@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff } from 'lucide-react';
+import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Image, X } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { wordpressClient } from '@/lib/wordpress-client';
 
@@ -10,6 +10,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  image?: string;
 }
 
 export function VoiceChat({ className = '' }: { className?: string }) {
@@ -21,10 +22,15 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSpeakingId, setCurrentSpeakingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   const [voiceMode, setVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const voiceModeRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
@@ -58,6 +64,55 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     voiceModeRef.current = voiceMode;
   }, [voiceMode]);
 
+  // Copy message to clipboard
+  const copyMessage = useCallback(async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(messageId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }, []);
+
+  // Handle image selection
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
+
+  const removeImage = useCallback(() => {
+    setSelectedImage(null);
+    setImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const stopAllAudio = useCallback(() => {
+    document.querySelectorAll('audio').forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsSpeaking(false);
+    setCurrentSpeakingId(null);
+  }, []);
+
   const playAudio = useCallback(async (base64Audio: string, messageId?: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       setIsSpeaking(true);
@@ -72,6 +127,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         const blob = new Blob([bytes], { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
+        audioRef.current = audio;
         
         audio.onended = () => {
           URL.revokeObjectURL(url);
@@ -127,8 +183,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         content: '🎤 Processing...',
         timestamp: new Date(),
       }]);
-      
-const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
+
+      const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
       if (!response.success) throw new Error(response.error || 'Failed to process voice');
 
       setMessages(prev => 
@@ -149,7 +205,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
 
       setIsLoading(false);
 
-      if (response.audio && autoSpeak) {
+      if (response.audio && autoSpeak && voiceModeRef.current) {
         await playAudio(response.audio, assistantId);
       }
       
@@ -168,26 +224,21 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
     }
   }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening]);
 
- const toggleVoiceMode = useCallback(async () => {
-  if (voiceMode) {
-    setVoiceMode(false);
-    voiceModeRef.current = false;
-    setIsListening(false);
-    setIsSpeaking(false);
-    if (recorderState.isRecording) {
-      cancelRecording();
+  const toggleVoiceMode = useCallback(async () => {
+    if (voiceMode) {
+      setVoiceMode(false);
+      voiceModeRef.current = false;
+      setIsListening(false);
+      if (recorderState.isRecording) {
+        cancelRecording();
+      }
+      stopAllAudio();
+    } else {
+      setVoiceMode(true);
+      voiceModeRef.current = true;
+      await startListening();
     }
-    // Stop any playing audio
-    document.querySelectorAll('audio').forEach(audio => {
-      audio.pause();
-      audio.currentTime = 0;
-    });
-  } else {
-    setVoiceMode(true);
-    voiceModeRef.current = true;
-    await startListening();
-  }
-}, [voiceMode, recorderState.isRecording, cancelRecording, startListening]);
+  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio]);
 
   const handleVoiceTap = useCallback(async () => {
     if (recorderState.isRecording) {
@@ -203,15 +254,23 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
       role: 'user',
       content: text.trim(),
       timestamp: new Date(),
+      image: selectedImage || undefined,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
+    removeImage();
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await wordpressClient.sendTextMessage(text);
+      // Include image description in the message if image is attached
+      let messageToSend = text;
+      if (selectedImage) {
+        messageToSend = `[User shared an image] ${text}`;
+      }
+
+      const response = await wordpressClient.sendTextMessage(messageToSend);
       if (!response.success) throw new Error(response.error || 'Failed to get response');
 
       const assistantId = `assistant-${Date.now()}`;
@@ -226,7 +285,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
 
       if (autoSpeak && response.ai_response) {
         try {
-    const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
+          const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
           const reader = new FileReader();
           reader.onloadend = () => {
             const base64 = (reader.result as string).split(',')[1];
@@ -243,7 +302,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, autoSpeak, playAudio]);
+  }, [isLoading, autoSpeak, playAudio, selectedImage, removeImage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,7 +335,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
         }}
       >
         <div className="flex items-center gap-3">
-      <div 
+          <div 
             className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg overflow-hidden p-1"
             style={{
               background: 'linear-gradient(135deg, #550000 0%, #BE5103 100%)',
@@ -331,7 +390,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
       <div className="relative flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="text-center py-12">
-           <div 
+            <div 
               className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center overflow-hidden p-2"
               style={{
                 background: 'linear-gradient(135deg, rgba(85, 0, 0, 0.4) 0%, rgba(190, 81, 3, 0.3) 100%)',
@@ -349,7 +408,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div 
-              className="max-w-[85%] rounded-2xl px-4 py-3"
+              className="max-w-[85%] rounded-2xl px-4 py-3 relative group"
               style={{
                 background: message.role === 'user'
                   ? 'linear-gradient(135deg, #111184 0%, #1a1a9e 50%, #0d0d6b 100%)'
@@ -360,7 +419,29 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
                   : '0 4px 20px rgba(0, 0, 0, 0.15)'
               }}
             >
+              {/* Image if attached */}
+              {message.image && (
+                <div className="mb-2 rounded-lg overflow-hidden">
+                  <img src={message.image} alt="Shared" className="max-w-full max-h-48 object-cover rounded-lg" />
+                </div>
+              )}
               <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              
+              {/* Copy button */}
+              <button
+                onClick={() => copyMessage(message.id, message.content)}
+                className="absolute top-2 right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  background: message.role === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                }}
+                title="Copy message"
+              >
+                {copiedId === message.id ? (
+                  <Check size={14} className={message.role === 'user' ? 'text-green-300' : 'text-green-600'} />
+                ) : (
+                  <Copy size={14} className={message.role === 'user' ? 'text-white/70' : 'text-gray-500'} />
+                )}
+              </button>
             </div>
           </div>
         ))}
@@ -404,6 +485,19 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
           borderTop: '1px solid rgba(190, 81, 3, 0.3)'
         }}
       >
+        {/* Image Preview */}
+        {selectedImage && (
+          <div className="mb-3 relative inline-block">
+            <img src={selectedImage} alt="Selected" className="max-h-20 rounded-lg" />
+            <button
+              onClick={removeImage}
+              className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Voice Mode Toggle Button */}
         <div className="flex justify-center mb-4">
           <button
@@ -448,6 +542,27 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
         {/* Text Input */}
         {!voiceMode && (
           <form onSubmit={handleSubmit} className="flex items-center gap-3">
+            {/* Image Upload Button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-3 rounded-full transition-all"
+              style={{
+                background: 'rgba(190, 81, 3, 0.3)',
+                color: '#E8C4A0',
+              }}
+              title="Add image"
+            >
+              <Image size={20} />
+            </button>
+
             <input
               type="text"
               value={inputText}
@@ -463,7 +578,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
             />
             <button
               type="submit"
-              disabled={!inputText.trim() || isLoading}
+              disabled={(!inputText.trim() && !selectedImage) || isLoading}
               className="p-3 rounded-full transition-all disabled:opacity-50"
               style={{
                 background: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)',
@@ -474,8 +589,8 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
               <Send size={20} />
             </button>
           </form>
-     )}
-        
+        )}
+
         {/* Disclaimer */}
         <p className="text-center text-xs mt-3 px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
           🤖 BFC AI is very smart, not perfect — Please confirm important info.
