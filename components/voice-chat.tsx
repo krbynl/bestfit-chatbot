@@ -168,20 +168,26 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
     }
   }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening]);
 
-  const toggleVoiceMode = useCallback(async () => {
-    if (voiceMode) {
-      setVoiceMode(false);
-      voiceModeRef.current = false;
-      setIsListening(false);
-      if (recorderState.isRecording) {
-        cancelRecording();
-      }
-    } else {
-      setVoiceMode(true);
-      voiceModeRef.current = true;
-      await startListening();
+ const toggleVoiceMode = useCallback(async () => {
+  if (voiceMode) {
+    setVoiceMode(false);
+    voiceModeRef.current = false;
+    setIsListening(false);
+    setIsSpeaking(false);
+    if (recorderState.isRecording) {
+      cancelRecording();
     }
-  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening]);
+    // Stop any playing audio
+    document.querySelectorAll('audio').forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  } else {
+    setVoiceMode(true);
+    voiceModeRef.current = true;
+    await startListening();
+  }
+}, [voiceMode, recorderState.isRecording, cancelRecording, startListening]);
 
   const handleVoiceTap = useCallback(async () => {
     if (recorderState.isRecording) {
