@@ -7,9 +7,15 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Next.js Chatbot Template",
-  description: "Next.js chatbot template using the AI SDK.",
+  metadataBase: new URL("https://chat.bestfitcoach.com"),
+  title: "Best Fit Coach - AI Fitness Coach",
+  description: "Your personal AI fitness coach with voice chat and memory",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/images/icon-192.png",
+    apple: "/images/icon-192.png",
+    shortcut: "/images/icon-192.png",
+  },
 };
 
 export const viewport = {
