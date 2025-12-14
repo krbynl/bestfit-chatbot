@@ -127,7 +127,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         content: '🎤 Processing...',
         timestamp: new Date(),
       }]);
-const response = await wordpressClient.sendVoiceMessage(audioBlob, 'nova');
+      
+const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
       if (!response.success) throw new Error(response.error || 'Failed to process voice');
 
       setMessages(prev => 
@@ -219,7 +220,7 @@ const response = await wordpressClient.sendVoiceMessage(audioBlob, 'nova');
 
       if (autoSpeak && response.ai_response) {
         try {
-          const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'nova');
+    const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
           const reader = new FileReader();
           reader.onloadend = () => {
             const base64 = (reader.result as string).split(',')[1];
