@@ -7,19 +7,17 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Coach BFC - AI Fitness Coach",
+  metadataBase: new URL("https://chat.bestfitcoach.com"),
+  title: "Best Fit Coach - AI Fitness Coach",
   description: "Your personal AI fitness coach with voice chat and memory",
   manifest: "/manifest.json",
-  themeColor: "#d97706",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Coach BFC",
-  },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: "/images/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/images/icon-192.png",
+    shortcut: "/images/icon-192.png",
   },
 };
 
