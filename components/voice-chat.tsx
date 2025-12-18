@@ -51,11 +51,9 @@ const CONVERSATION_STARTERS = [
   { icon: <Flame size={18} />, text: "How to lose weight", color: '#ea580c' },
 ];
 
-// Get today's tip based on date
-const getTodaysTip = () => {
-  const today = new Date();
-  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
-  return DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
+// Get today's tip based on date (called client-side only)
+const getTodaysTip = (tipIndex: number) => {
+  return DAILY_TIPS[tipIndex % DAILY_TIPS.length];
 };
 
 // Streak Management
@@ -348,7 +346,15 @@ const UsageCounter = ({ usage }: { usage: UsageStats | null }) => {
 
 // Daily Tip Component
 const DailyTip = () => {
-  const tip = getTodaysTip();
+  const [tipIndex, setTipIndex] = useState(0);
+  
+  useEffect(() => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+    setTipIndex(dayOfYear);
+  }, []);
+  
+  const tip = getTodaysTip(tipIndex);
   
   return (
     <div 
