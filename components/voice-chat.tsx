@@ -417,102 +417,256 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
   );
 };
 
-// Futuristic Typing Indicator Component - Mix of Pulse Wave, Ring & Bars
+// Futuristic Typing Indicator - Holographic Fitness Tech Style
 const TypingIndicator = () => {
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-6 gap-4">
-      {/* Main Animation Container */}
-      <div className="relative flex items-center justify-center">
-        {/* Outer Rotating Ring */}
+    <div 
+      className="flex flex-col items-center justify-center py-8 px-6 gap-5"
+      style={{
+        background: 'radial-gradient(ellipse at center, rgba(14, 165, 233, 0.08) 0%, transparent 70%)',
+      }}
+    >
+      {/* Main Holographic Container */}
+      <div className="relative flex items-center justify-center w-32 h-32">
+        
+        {/* Outer Hexagonal Glow Ring */}
         <div
-          className="absolute w-24 h-24 rounded-full border-2 border-transparent animate-spin"
+          className="absolute w-32 h-32 animate-spin"
           style={{
-            borderTopColor: '#BE5103',
-            borderRightColor: 'rgba(139, 58, 2, 0.4)',
-            animationDuration: '2s',
-            boxShadow: '0 0 15px rgba(190, 81, 3, 0.4)',
+            animationDuration: '8s',
+            background: 'conic-gradient(from 0deg, transparent, #0EA5E9, transparent, #22D3EE, transparent)',
+            mask: 'radial-gradient(circle, transparent 60%, black 61%, black 65%, transparent 66%)',
+            WebkitMask: 'radial-gradient(circle, transparent 60%, black 61%, black 65%, transparent 66%)',
+            filter: 'drop-shadow(0 0 10px rgba(14, 165, 233, 0.6))',
           }}
         />
         
-        {/* Middle Pulsing Ring */}
+        {/* Middle Tech Ring - Counter Rotation */}
         <div
-          className="absolute w-16 h-16 rounded-full border border-dashed animate-pulse"
+          className="absolute w-24 h-24 rounded-full animate-spin"
           style={{
-            borderColor: 'rgba(190, 81, 3, 0.5)',
-            animationDuration: '1s',
+            animationDuration: '4s',
+            animationDirection: 'reverse',
+            border: '1px solid rgba(34, 211, 238, 0.4)',
+            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(34, 211, 238, 0.1)',
           }}
         />
         
-        {/* Center Sound Wave Bars */}
-        <div className="flex items-center justify-center gap-1 h-10 z-10">
-          {[...Array(5)].map((_, i) => (
-            <div
+        {/* Inner Pulsing Core */}
+        <div
+          className="absolute w-16 h-16 rounded-full animate-pulse"
+          style={{
+            background: 'radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, transparent 70%)',
+            boxShadow: '0 0 30px rgba(14, 165, 233, 0.4)',
+          }}
+        />
+        
+        {/* DNA Helix Animation */}
+        <svg className="absolute w-20 h-20" viewBox="0 0 80 80">
+          {/* Helix strand 1 */}
+          <path
+            d="M20,10 Q40,25 20,40 Q0,55 20,70"
+            fill="none"
+            stroke="url(#helixGradient1)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{
+              filter: 'drop-shadow(0 0 4px #0EA5E9)',
+              animation: 'helixRotate 2s ease-in-out infinite',
+            }}
+          />
+          {/* Helix strand 2 */}
+          <path
+            d="M60,10 Q40,25 60,40 Q80,55 60,70"
+            fill="none"
+            stroke="url(#helixGradient2)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            style={{
+              filter: 'drop-shadow(0 0 4px #22D3EE)',
+              animation: 'helixRotate 2s ease-in-out infinite reverse',
+            }}
+          />
+          {/* Connecting bars */}
+          {[18, 30, 42, 54].map((y, i) => (
+            <line
               key={i}
-              className="w-1.5 rounded-full"
+              x1="28"
+              y1={y}
+              x2="52"
+              y2={y}
+              stroke="rgba(34, 211, 238, 0.6)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
               style={{
-                background: 'linear-gradient(to top, #8B3A02, #BE5103)',
-                height: '100%',
-                animation: 'soundBarPulse 0.8s ease-in-out infinite',
-                animationDelay: `${i * 0.1}s`,
-                boxShadow: '0 0 8px rgba(190, 81, 3, 0.6)',
+                animation: `barPulse 1.5s ease-in-out infinite`,
+                animationDelay: `${i * 0.2}s`,
               }}
             />
           ))}
-        </div>
-      </div>
-      
-      {/* Pulse Wave Line */}
-      <div className="relative w-full h-6 overflow-hidden">
-        <svg viewBox="0 0 200 30" className="w-full h-full">
-          {/* Background line */}
-          <line x1="0" y1="15" x2="200" y2="15" stroke="rgba(190, 81, 3, 0.15)" strokeWidth="1" />
-          
-          {/* Animated pulse wave */}
-          <path
-            d="M0,15 L40,15 L50,15 L55,5 L60,25 L65,3 L70,27 L75,15 L85,15 L200,15"
-            fill="none"
-            stroke="url(#typingGradient)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            className="animate-pulse"
-          />
-          
-          {/* Gradient definition - Brand colors */}
           <defs>
-            <linearGradient id="typingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(139, 58, 2, 0.3)" />
-              <stop offset="35%" stopColor="#8B3A02" />
-              <stop offset="50%" stopColor="#BE5103" />
-              <stop offset="65%" stopColor="#8B3A02" />
-              <stop offset="100%" stopColor="rgba(139, 58, 2, 0.3)" />
+            <linearGradient id="helixGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#0EA5E9" />
+              <stop offset="50%" stopColor="#22D3EE" />
+              <stop offset="100%" stopColor="#0EA5E9" />
+            </linearGradient>
+            <linearGradient id="helixGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#22D3EE" />
+              <stop offset="50%" stopColor="#0EA5E9" />
+              <stop offset="100%" stopColor="#22D3EE" />
             </linearGradient>
           </defs>
+        </svg>
+        
+        {/* Floating Hexagon Particles */}
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              width: '8px',
+              height: '8px',
+              background: i % 2 === 0 ? '#0EA5E9' : '#22D3EE',
+              clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+              animation: `floatParticle 3s ease-in-out infinite`,
+              animationDelay: `${i * 0.5}s`,
+              top: `${15 + Math.sin(i * 60 * Math.PI / 180) * 40}%`,
+              left: `${50 + Math.cos(i * 60 * Math.PI / 180) * 45}%`,
+              filter: 'drop-shadow(0 0 4px currentColor)',
+              opacity: 0.8,
+            }}
+          />
+        ))}
+        
+        {/* Center Glowing Orb with Copper Accent */}
+        <div
+          className="absolute w-6 h-6 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, #BE5103 0%, #0EA5E9 50%, transparent 70%)',
+            boxShadow: '0 0 20px #BE5103, 0 0 40px rgba(14, 165, 233, 0.5)',
+            animation: 'orbPulse 1.5s ease-in-out infinite',
+          }}
+        />
+      </div>
+      
+      {/* Holographic ECG Wave */}
+      <div className="relative w-full h-10 overflow-hidden">
+        <svg viewBox="0 0 300 40" className="w-full h-full" preserveAspectRatio="none">
+          {/* Grid lines for tech feel */}
+          {[...Array(15)].map((_, i) => (
+            <line
+              key={i}
+              x1={i * 20}
+              y1="0"
+              x2={i * 20}
+              y2="40"
+              stroke="rgba(14, 165, 233, 0.1)"
+              strokeWidth="0.5"
+            />
+          ))}
+          <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(14, 165, 233, 0.15)" strokeWidth="0.5" />
           
-          {/* Glowing traveling dot - Brand color */}
-          <circle r="3" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 6px #BE5103)' }}>
+          {/* Main ECG Wave */}
+          <path
+            d="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
+            fill="none"
+            stroke="url(#ecgGradient)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              filter: 'drop-shadow(0 0 6px #0EA5E9)',
+            }}
+          />
+          
+          {/* Scanning Line Effect */}
+          <rect
+            x="0"
+            y="0"
+            width="40"
+            height="40"
+            fill="url(#scanGradient)"
+            style={{
+              animation: 'scanLine 2.5s linear infinite',
+            }}
+          />
+          
+          {/* Traveling Energy Pulse */}
+          <circle r="5" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 8px #BE5103) drop-shadow(0 0 15px #0EA5E9)' }}>
             <animateMotion
-              path="M0,15 L40,15 L50,15 L55,5 L60,25 L65,3 L70,27 L75,15 L85,15 L200,15"
-              dur="2s"
+              path="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
+              dur="2.5s"
               repeatCount="indefinite"
             />
           </circle>
+          
+          {/* Secondary smaller pulse */}
+          <circle r="3" fill="#22D3EE" opacity="0.7" style={{ filter: 'drop-shadow(0 0 4px #22D3EE)' }}>
+            <animateMotion
+              path="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
+              dur="2.5s"
+              begin="0.3s"
+              repeatCount="indefinite"
+            />
+          </circle>
+          
+          <defs>
+            <linearGradient id="ecgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(14, 165, 233, 0.3)" />
+              <stop offset="30%" stopColor="#0EA5E9" />
+              <stop offset="50%" stopColor="#22D3EE" />
+              <stop offset="70%" stopColor="#0EA5E9" />
+              <stop offset="100%" stopColor="rgba(14, 165, 233, 0.3)" />
+            </linearGradient>
+            <linearGradient id="scanGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="50%" stopColor="rgba(34, 211, 238, 0.3)" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
         </svg>
       </div>
       
-      {/* Text with animated dots */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium tracking-wide" style={{ color: '#BE5103' }}>
-          Coach BFC is thinking
+      {/* Futuristic Sound Bars */}
+      <div className="flex items-end justify-center gap-1.5 h-8">
+        {[...Array(9)].map((_, i) => (
+          <div
+            key={i}
+            className="w-1.5 rounded-full"
+            style={{
+              background: `linear-gradient(to top, #0C4A6E, ${i % 2 === 0 ? '#0EA5E9' : '#22D3EE'})`,
+              height: '100%',
+              animation: 'soundBarFloat 0.8s ease-in-out infinite',
+              animationDelay: `${i * 0.08}s`,
+              boxShadow: `0 0 8px ${i % 2 === 0 ? 'rgba(14, 165, 233, 0.6)' : 'rgba(34, 211, 238, 0.6)'}`,
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Holographic Text */}
+      <div className="flex items-center gap-3">
+        <span 
+          className="text-sm font-semibold tracking-widest uppercase"
+          style={{ 
+            color: '#22D3EE',
+            textShadow: '0 0 10px rgba(34, 211, 238, 0.5), 0 0 20px rgba(14, 165, 233, 0.3)',
+            letterSpacing: '0.15em',
+          }}
+        >
+          Analyzing
         </span>
-        <span className="flex gap-1">
+        <span className="flex gap-1.5">
           {[...Array(3)].map((_, i) => (
             <span
               key={i}
-              className="inline-block w-1.5 h-1.5 rounded-full"
+              className="inline-block w-2 h-2"
               style={{
-                background: '#BE5103',
-                animation: 'dotBounce 1.2s ease-in-out infinite',
-                animationDelay: `${i * 0.15}s`,
+                background: '#0EA5E9',
+                clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                animation: 'hexPulse 1.5s ease-in-out infinite',
+                animationDelay: `${i * 0.2}s`,
+                filter: 'drop-shadow(0 0 4px #0EA5E9)',
               }}
             />
           ))}
@@ -520,13 +674,33 @@ const TypingIndicator = () => {
       </div>
       
       <style jsx>{`
-        @keyframes soundBarPulse {
+        @keyframes helixRotate {
+          0%, 100% { transform: scaleX(1); opacity: 0.8; }
+          50% { transform: scaleX(0.8); opacity: 1; }
+        }
+        @keyframes barPulse {
+          0%, 100% { opacity: 0.3; transform: scaleX(0.8); }
+          50% { opacity: 1; transform: scaleX(1); }
+        }
+        @keyframes floatParticle {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+          50% { transform: translateY(-8px) scale(1.2); opacity: 1; }
+        }
+        @keyframes orbPulse {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.3); opacity: 1; }
+        }
+        @keyframes scanLine {
+          0% { transform: translateX(-40px); }
+          100% { transform: translateX(300px); }
+        }
+        @keyframes soundBarFloat {
           0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
           50% { transform: scaleY(1); opacity: 1; }
         }
-        @keyframes dotBounce {
-          0%, 100% { transform: translateY(0); opacity: 0.4; }
-          50% { transform: translateY(-4px); opacity: 1; }
+        @keyframes hexPulse {
+          0%, 100% { transform: scale(0.8) rotate(0deg); opacity: 0.4; }
+          50% { transform: scale(1.2) rotate(30deg); opacity: 1; }
         }
       `}</style>
     </div>
