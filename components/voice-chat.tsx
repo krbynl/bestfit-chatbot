@@ -338,8 +338,8 @@ const UsageLimitAlert = ({ usage }: { usage: UsageStats | null }) => {
           <p className="font-semibold text-white">Daily limit reached!</p>
           <p className="text-sm text-white/80">
             {usage.is_premium 
-              ? "You've used all 500 messages today. Limit resets at midnight."
-              : "Upgrade to Premium for 500 messages/day!"
+              ? "You've used all 3000 messages today. Limit resets at midnight."
+              : "Upgrade to Premium for 3000 messages/day!"
             }
           </p>
         </div>
@@ -417,80 +417,117 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
   );
 };
 
-// Futuristic Typing Indicator Component - Pulse Wave Style
+// Futuristic Typing Indicator Component - Mix of Pulse Wave, Ring & Bars
 const TypingIndicator = () => {
   return (
-    <div className="flex flex-col items-center justify-center py-4 px-6 gap-3">
-      {/* Pulse Wave Animation */}
-      <div className="relative w-full h-8 overflow-hidden">
-        <svg viewBox="0 0 200 40" className="w-full h-full">
+    <div className="flex flex-col items-center justify-center py-6 px-6 gap-4">
+      {/* Main Animation Container */}
+      <div className="relative flex items-center justify-center">
+        {/* Outer Rotating Ring */}
+        <div
+          className="absolute w-24 h-24 rounded-full border-2 border-transparent animate-spin"
+          style={{
+            borderTopColor: '#BE5103',
+            borderRightColor: 'rgba(190, 81, 3, 0.3)',
+            animationDuration: '2s',
+            boxShadow: '0 0 15px rgba(190, 81, 3, 0.3)',
+          }}
+        />
+        
+        {/* Middle Pulsing Ring */}
+        <div
+          className="absolute w-16 h-16 rounded-full border border-dashed animate-pulse"
+          style={{
+            borderColor: 'rgba(220, 38, 38, 0.5)',
+            animationDuration: '1s',
+          }}
+        />
+        
+        {/* Center Sound Wave Bars */}
+        <div className="flex items-center justify-center gap-1 h-10 z-10">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="w-1.5 rounded-full"
+              style={{
+                background: 'linear-gradient(to top, #BE5103, #dc2626)',
+                height: '100%',
+                animation: 'soundBarPulse 0.8s ease-in-out infinite',
+                animationDelay: `${i * 0.1}s`,
+                boxShadow: '0 0 8px rgba(190, 81, 3, 0.5)',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+      
+      {/* Pulse Wave Line */}
+      <div className="relative w-full h-6 overflow-hidden">
+        <svg viewBox="0 0 200 30" className="w-full h-full">
           {/* Background line */}
-          <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(190, 81, 3, 0.2)" strokeWidth="2" />
+          <line x1="0" y1="15" x2="200" y2="15" stroke="rgba(190, 81, 3, 0.15)" strokeWidth="1" />
           
           {/* Animated pulse wave */}
           <path
-            d="M0,20 L30,20 L40,20 L50,8 L60,32 L70,5 L80,35 L90,20 L100,20 L200,20"
+            d="M0,15 L40,15 L50,15 L55,5 L60,25 L65,3 L70,27 L75,15 L85,15 L200,15"
             fill="none"
-            stroke="url(#pulseGradient)"
-            strokeWidth="2.5"
+            stroke="url(#typingGradient)"
+            strokeWidth="2"
             strokeLinecap="round"
-            style={{
-              strokeDasharray: '200',
-              animation: 'pulseWave 1.5s ease-in-out infinite',
-            }}
+            className="animate-pulse"
           />
           
           {/* Gradient definition */}
           <defs>
-            <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#BE5103" />
-              <stop offset="50%" stopColor="#dc2626" />
-              <stop offset="100%" stopColor="#BE5103" />
+            <linearGradient id="typingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(190, 81, 3, 0.2)" />
+              <stop offset="40%" stopColor="#BE5103" />
+              <stop offset="60%" stopColor="#dc2626" />
+              <stop offset="100%" stopColor="rgba(190, 81, 3, 0.2)" />
             </linearGradient>
           </defs>
           
-          {/* Glowing dot that travels along the wave */}
-          <circle r="4" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 6px #BE5103)' }}>
+          {/* Glowing traveling dot */}
+          <circle r="3" fill="#dc2626" style={{ filter: 'drop-shadow(0 0 4px #dc2626)' }}>
             <animateMotion
-              path="M0,20 L30,20 L40,20 L50,8 L60,32 L70,5 L80,35 L90,20 L100,20 L200,20"
-              dur="1.5s"
+              path="M0,15 L40,15 L50,15 L55,5 L60,25 L65,3 L70,27 L75,15 L85,15 L200,15"
+              dur="2s"
               repeatCount="indefinite"
             />
           </circle>
         </svg>
-        
-        <style jsx>{`
-          @keyframes pulseWave {
-            0% { opacity: 0.4; stroke-dashoffset: 200; }
-            50% { opacity: 1; stroke-dashoffset: 100; }
-            100% { opacity: 0.4; stroke-dashoffset: 0; }
-          }
-        `}</style>
       </div>
       
-      {/* Text with subtle animation */}
+      {/* Text with animated dots */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium" style={{ color: '#BE5103' }}>Coach BFC is thinking</span>
-        <span className="flex gap-0.5">
+        <span className="text-sm font-medium tracking-wide" style={{ color: '#A89080' }}>
+          Coach BFC is thinking
+        </span>
+        <span className="flex gap-1">
           {[...Array(3)].map((_, i) => (
             <span
               key={i}
               className="inline-block w-1.5 h-1.5 rounded-full"
               style={{
                 background: '#BE5103',
-                animation: 'dotPulse 1s ease-in-out infinite',
-                animationDelay: `${i * 0.2}s`,
+                animation: 'dotBounce 1.2s ease-in-out infinite',
+                animationDelay: `${i * 0.15}s`,
               }}
             />
           ))}
         </span>
-        <style jsx>{`
-          @keyframes dotPulse {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-          }
-        `}</style>
       </div>
+      
+      <style jsx>{`
+        @keyframes soundBarPulse {
+          0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+          50% { transform: scaleY(1); opacity: 1; }
+        }
+        @keyframes dotBounce {
+          0%, 100% { transform: translateY(0); opacity: 0.4; }
+          50% { transform: translateY(-4px); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };
@@ -556,7 +593,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           setMessages([{
             id: 'welcome',
             role: 'assistant',
-            content: `Welcome back! 💪 Great to see you again. I remember our previous conversations. How can I help you today?`,
+            content: `Good to have you back! I remember our previous conversations. How can I help you today?`,
             timestamp: new Date(),
           }]);
           setShowWelcome(false);
