@@ -320,26 +320,41 @@ const StreakBadge = ({ streak }: { streak: UserStreak }) => {
   );
 };
 
-// Usage Counter Component
-const UsageCounter = ({ usage }: { usage: UsageStats | null }) => {
-  if (!usage) return null;
-  
-  const percentage = ((usage.limit - usage.remaining) / usage.limit) * 100;
-  const isLow = usage.remaining <= 10;
+// Usage Limit Alert Component (only shows when limit reached)
+const UsageLimitAlert = ({ usage }: { usage: UsageStats | null }) => {
+  if (!usage || usage.remaining > 0) return null;
   
   return (
-    <div className="flex items-center gap-2 text-xs" style={{ color: isLow ? '#ef4444' : '#A89080' }}>
-      <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(190, 81, 3, 0.2)' }}>
-        <div 
-          className="h-full rounded-full transition-all duration-500"
-          style={{ 
-            width: `${percentage}%`,
-            background: isLow ? '#ef4444' : 'linear-gradient(90deg, #16a34a, #BE5103)'
-          }}
-        />
+    <div 
+      className="relative p-4 text-center backdrop-blur-sm"
+      style={{ 
+        background: 'linear-gradient(90deg, rgba(220, 38, 38, 0.95) 0%, rgba(190, 81, 3, 0.9) 100%)',
+        borderBottom: '1px solid rgba(220, 38, 38, 0.5)'
+      }}
+    >
+      <div className="flex items-center justify-center gap-3">
+        <Flame size={20} className="text-yellow-300 animate-pulse" />
+        <div>
+          <p className="font-semibold text-white">Daily limit reached!</p>
+          <p className="text-sm text-white/80">
+            {usage.is_premium 
+              ? "You've used all 500 messages today. Limit resets at midnight."
+              : "Upgrade to Premium for 500 messages/day!"
+            }
+          </p>
+        </div>
       </div>
-      <span>{usage.remaining}/{usage.limit} left</span>
-      {usage.is_premium && <span className="text-yellow-500">⭐</span>}
+      {!usage.is_premium && (
+        <button 
+          className="mt-3 px-6 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
+          style={{
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            color: '#78350f'
+          }}
+        >
+          ⭐ Upgrade to Premium
+        </button>
+      )}
     </div>
   );
 };
@@ -402,30 +417,80 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
   );
 };
 
-// Typing Indicator Component
+// Futuristic Typing Indicator Component - Pulse Wave Style
 const TypingIndicator = () => {
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="flex gap-1">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="w-2 h-2 rounded-full"
+    <div className="flex flex-col items-center justify-center py-4 px-6 gap-3">
+      {/* Pulse Wave Animation */}
+      <div className="relative w-full h-8 overflow-hidden">
+        <svg viewBox="0 0 200 40" className="w-full h-full">
+          {/* Background line */}
+          <line x1="0" y1="20" x2="200" y2="20" stroke="rgba(190, 81, 3, 0.2)" strokeWidth="2" />
+          
+          {/* Animated pulse wave */}
+          <path
+            d="M0,20 L30,20 L40,20 L50,8 L60,32 L70,5 L80,35 L90,20 L100,20 L200,20"
+            fill="none"
+            stroke="url(#pulseGradient)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
             style={{
-              background: '#BE5103',
-              animation: 'bounce 1s ease-in-out infinite',
-              animationDelay: `${i * 0.15}s`
+              strokeDasharray: '200',
+              animation: 'pulseWave 1.5s ease-in-out infinite',
             }}
           />
-        ))}
+          
+          {/* Gradient definition */}
+          <defs>
+            <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#BE5103" />
+              <stop offset="50%" stopColor="#dc2626" />
+              <stop offset="100%" stopColor="#BE5103" />
+            </linearGradient>
+          </defs>
+          
+          {/* Glowing dot that travels along the wave */}
+          <circle r="4" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 6px #BE5103)' }}>
+            <animateMotion
+              path="M0,20 L30,20 L40,20 L50,8 L60,32 L70,5 L80,35 L90,20 L100,20 L200,20"
+              dur="1.5s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        </svg>
+        
+        <style jsx>{`
+          @keyframes pulseWave {
+            0% { opacity: 0.4; stroke-dashoffset: 200; }
+            50% { opacity: 1; stroke-dashoffset: 100; }
+            100% { opacity: 0.4; stroke-dashoffset: 0; }
+          }
+        `}</style>
       </div>
-      <span className="text-sm" style={{ color: '#A89080' }}>Coach BFC is typing...</span>
-      <style jsx>{`
-        @keyframes bounce {
-          0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-8px); }
-        }
-      `}</style>
+      
+      {/* Text with subtle animation */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium" style={{ color: '#BE5103' }}>Coach BFC is thinking</span>
+        <span className="flex gap-0.5">
+          {[...Array(3)].map((_, i) => (
+            <span
+              key={i}
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{
+                background: '#BE5103',
+                animation: 'dotPulse 1s ease-in-out infinite',
+                animationDelay: `${i * 0.2}s`,
+              }}
+            />
+          ))}
+        </span>
+        <style jsx>{`
+          @keyframes dotPulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
@@ -788,6 +853,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Streak Badge */}
+          <StreakBadge streak={streak} />
           {/* Clear Chat Button */}
           {messages.length > 0 && (
             <button
@@ -818,11 +885,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         </div>
       </div>
 
-      {/* Usage Counter & Streak Badge */}
-      <div className="relative flex items-center justify-between px-4 py-2" style={{ background: 'rgba(0,0,0,0.3)' }}>
-        <UsageCounter usage={usage} />
-        <StreakBadge streak={streak} />
-      </div>
+      {/* Usage Limit Alert - Only shows when limit reached */}
+      <UsageLimitAlert usage={usage} />
 
       {/* Error display */}
       {error && (
@@ -862,7 +926,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
             <div className="relative w-32 h-32 mx-auto mb-4">
               <FitnessLoadingAnimation state="idle" />
             </div>
-            <p className="text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC 💪</p>
+            <p className="text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC</p>
             <p className="mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
             
             {/* Streak celebration for returning users */}
