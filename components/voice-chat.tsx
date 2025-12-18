@@ -428,9 +428,9 @@ const TypingIndicator = () => {
           className="absolute w-24 h-24 rounded-full border-2 border-transparent animate-spin"
           style={{
             borderTopColor: '#BE5103',
-            borderRightColor: 'rgba(190, 81, 3, 0.3)',
+            borderRightColor: 'rgba(139, 58, 2, 0.4)',
             animationDuration: '2s',
-            boxShadow: '0 0 15px rgba(190, 81, 3, 0.3)',
+            boxShadow: '0 0 15px rgba(190, 81, 3, 0.4)',
           }}
         />
         
@@ -438,7 +438,7 @@ const TypingIndicator = () => {
         <div
           className="absolute w-16 h-16 rounded-full border border-dashed animate-pulse"
           style={{
-            borderColor: 'rgba(220, 38, 38, 0.5)',
+            borderColor: 'rgba(190, 81, 3, 0.5)',
             animationDuration: '1s',
           }}
         />
@@ -450,11 +450,11 @@ const TypingIndicator = () => {
               key={i}
               className="w-1.5 rounded-full"
               style={{
-                background: 'linear-gradient(to top, #BE5103, #dc2626)',
+                background: 'linear-gradient(to top, #8B3A02, #BE5103)',
                 height: '100%',
                 animation: 'soundBarPulse 0.8s ease-in-out infinite',
                 animationDelay: `${i * 0.1}s`,
-                boxShadow: '0 0 8px rgba(190, 81, 3, 0.5)',
+                boxShadow: '0 0 8px rgba(190, 81, 3, 0.6)',
               }}
             />
           ))}
@@ -477,18 +477,19 @@ const TypingIndicator = () => {
             className="animate-pulse"
           />
           
-          {/* Gradient definition */}
+          {/* Gradient definition - Brand colors */}
           <defs>
             <linearGradient id="typingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(190, 81, 3, 0.2)" />
-              <stop offset="40%" stopColor="#BE5103" />
-              <stop offset="60%" stopColor="#dc2626" />
-              <stop offset="100%" stopColor="rgba(190, 81, 3, 0.2)" />
+              <stop offset="0%" stopColor="rgba(139, 58, 2, 0.3)" />
+              <stop offset="35%" stopColor="#8B3A02" />
+              <stop offset="50%" stopColor="#BE5103" />
+              <stop offset="65%" stopColor="#8B3A02" />
+              <stop offset="100%" stopColor="rgba(139, 58, 2, 0.3)" />
             </linearGradient>
           </defs>
           
-          {/* Glowing traveling dot */}
-          <circle r="3" fill="#dc2626" style={{ filter: 'drop-shadow(0 0 4px #dc2626)' }}>
+          {/* Glowing traveling dot - Brand color */}
+          <circle r="3" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 6px #BE5103)' }}>
             <animateMotion
               path="M0,15 L40,15 L50,15 L55,5 L60,25 L65,3 L70,27 L75,15 L85,15 L200,15"
               dur="2s"
@@ -500,7 +501,7 @@ const TypingIndicator = () => {
       
       {/* Text with animated dots */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium tracking-wide" style={{ color: '#A89080' }}>
+        <span className="text-sm font-medium tracking-wide" style={{ color: '#BE5103' }}>
           Coach BFC is thinking
         </span>
         <span className="flex gap-1">
