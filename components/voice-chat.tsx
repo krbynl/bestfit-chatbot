@@ -417,86 +417,69 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
   );
 };
 
-// Futuristic Typing Indicator - Holographic Fitness Tech Style
+// Futuristic Typing Indicator - Holographic Fitness Tech Style (Compact)
 const TypingIndicator = () => {
   return (
     <div 
-      className="flex flex-col items-center justify-center py-8 px-6 gap-5"
+      className="flex items-center justify-center py-4 px-4 gap-4"
       style={{
-        background: 'radial-gradient(ellipse at center, rgba(14, 165, 233, 0.08) 0%, transparent 70%)',
+        background: 'linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(20, 15, 10, 0.95) 50%, rgba(12, 10, 18, 0.95) 100%)',
+        borderRadius: '16px',
       }}
     >
-      {/* Main Holographic Container */}
-      <div className="relative flex items-center justify-center w-32 h-32">
+      {/* Main Holographic Container - Compact */}
+      <div className="relative flex items-center justify-center w-14 h-14">
         
         {/* Outer Hexagonal Glow Ring */}
         <div
-          className="absolute w-32 h-32 animate-spin"
+          className="absolute w-14 h-14 animate-spin"
           style={{
-            animationDuration: '8s',
+            animationDuration: '6s',
             background: 'conic-gradient(from 0deg, transparent, #0EA5E9, transparent, #22D3EE, transparent)',
-            mask: 'radial-gradient(circle, transparent 60%, black 61%, black 65%, transparent 66%)',
-            WebkitMask: 'radial-gradient(circle, transparent 60%, black 61%, black 65%, transparent 66%)',
-            filter: 'drop-shadow(0 0 10px rgba(14, 165, 233, 0.6))',
+            mask: 'radial-gradient(circle, transparent 55%, black 56%, black 62%, transparent 63%)',
+            WebkitMask: 'radial-gradient(circle, transparent 55%, black 56%, black 62%, transparent 63%)',
+            filter: 'drop-shadow(0 0 6px rgba(14, 165, 233, 0.5))',
           }}
         />
         
         {/* Middle Tech Ring - Counter Rotation */}
         <div
-          className="absolute w-24 h-24 rounded-full animate-spin"
+          className="absolute w-10 h-10 rounded-full animate-spin"
           style={{
-            animationDuration: '4s',
+            animationDuration: '3s',
             animationDirection: 'reverse',
-            border: '1px solid rgba(34, 211, 238, 0.4)',
-            boxShadow: '0 0 20px rgba(34, 211, 238, 0.2), inset 0 0 20px rgba(34, 211, 238, 0.1)',
+            border: '1px solid rgba(34, 211, 238, 0.3)',
+            boxShadow: '0 0 10px rgba(34, 211, 238, 0.15), inset 0 0 10px rgba(34, 211, 238, 0.08)',
           }}
         />
         
-        {/* Inner Pulsing Core */}
-        <div
-          className="absolute w-16 h-16 rounded-full animate-pulse"
-          style={{
-            background: 'radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, transparent 70%)',
-            boxShadow: '0 0 30px rgba(14, 165, 233, 0.4)',
-          }}
-        />
-        
-        {/* DNA Helix Animation */}
-        <svg className="absolute w-20 h-20" viewBox="0 0 80 80">
-          {/* Helix strand 1 */}
+        {/* DNA Helix Animation - Smaller */}
+        <svg className="absolute w-8 h-8" viewBox="0 0 80 80">
           <path
-            d="M20,10 Q40,25 20,40 Q0,55 20,70"
+            d="M25,15 Q40,30 25,45 Q10,60 25,75"
             fill="none"
             stroke="url(#helixGradient1)"
-            strokeWidth="2"
+            strokeWidth="1.5"
             strokeLinecap="round"
-            style={{
-              filter: 'drop-shadow(0 0 4px #0EA5E9)',
-              animation: 'helixRotate 2s ease-in-out infinite',
-            }}
+            style={{ filter: 'drop-shadow(0 0 3px #0EA5E9)' }}
           />
-          {/* Helix strand 2 */}
           <path
-            d="M60,10 Q40,25 60,40 Q80,55 60,70"
+            d="M55,15 Q40,30 55,45 Q70,60 55,75"
             fill="none"
             stroke="url(#helixGradient2)"
-            strokeWidth="2"
+            strokeWidth="1.5"
             strokeLinecap="round"
-            style={{
-              filter: 'drop-shadow(0 0 4px #22D3EE)',
-              animation: 'helixRotate 2s ease-in-out infinite reverse',
-            }}
+            style={{ filter: 'drop-shadow(0 0 3px #22D3EE)' }}
           />
-          {/* Connecting bars */}
-          {[18, 30, 42, 54].map((y, i) => (
+          {[25, 40, 55].map((y, i) => (
             <line
               key={i}
-              x1="28"
+              x1="32"
               y1={y}
-              x2="52"
+              x2="48"
               y2={y}
-              stroke="rgba(34, 211, 238, 0.6)"
-              strokeWidth="1.5"
+              stroke="rgba(34, 211, 238, 0.5)"
+              strokeWidth="1"
               strokeLinecap="round"
               style={{
                 animation: `barPulse 1.5s ease-in-out infinite`,
@@ -507,200 +490,116 @@ const TypingIndicator = () => {
           <defs>
             <linearGradient id="helixGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#0EA5E9" />
-              <stop offset="50%" stopColor="#22D3EE" />
-              <stop offset="100%" stopColor="#0EA5E9" />
+              <stop offset="100%" stopColor="#22D3EE" />
             </linearGradient>
             <linearGradient id="helixGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#22D3EE" />
-              <stop offset="50%" stopColor="#0EA5E9" />
-              <stop offset="100%" stopColor="#22D3EE" />
+              <stop offset="100%" stopColor="#0EA5E9" />
             </linearGradient>
           </defs>
         </svg>
         
-        {/* Floating Hexagon Particles */}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              width: '8px',
-              height: '8px',
-              background: i % 2 === 0 ? '#0EA5E9' : '#22D3EE',
-              clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-              animation: `floatParticle 3s ease-in-out infinite`,
-              animationDelay: `${i * 0.5}s`,
-              top: `${15 + Math.sin(i * 60 * Math.PI / 180) * 40}%`,
-              left: `${50 + Math.cos(i * 60 * Math.PI / 180) * 45}%`,
-              filter: 'drop-shadow(0 0 4px currentColor)',
-              opacity: 0.8,
-            }}
-          />
-        ))}
-        
         {/* Center Glowing Orb with Copper Accent */}
         <div
-          className="absolute w-6 h-6 rounded-full"
+          className="absolute w-3 h-3 rounded-full"
           style={{
-            background: 'radial-gradient(circle, #BE5103 0%, #0EA5E9 50%, transparent 70%)',
-            boxShadow: '0 0 20px #BE5103, 0 0 40px rgba(14, 165, 233, 0.5)',
+            background: 'radial-gradient(circle, #BE5103 0%, #0EA5E9 60%, transparent 80%)',
+            boxShadow: '0 0 8px #BE5103, 0 0 15px rgba(14, 165, 233, 0.4)',
             animation: 'orbPulse 1.5s ease-in-out infinite',
           }}
         />
       </div>
       
-      {/* Holographic ECG Wave */}
-      <div className="relative w-full h-10 overflow-hidden">
-        <svg viewBox="0 0 300 40" className="w-full h-full" preserveAspectRatio="none">
-          {/* Grid lines for tech feel */}
-          {[...Array(15)].map((_, i) => (
-            <line
-              key={i}
-              x1={i * 20}
-              y1="0"
-              x2={i * 20}
-              y2="40"
-              stroke="rgba(14, 165, 233, 0.1)"
-              strokeWidth="0.5"
+      {/* Right Side - ECG + Text */}
+      <div className="flex flex-col gap-2">
+        {/* Compact ECG Wave */}
+        <div className="relative w-32 h-6 overflow-hidden">
+          <svg viewBox="0 0 150 24" className="w-full h-full" preserveAspectRatio="none">
+            {/* Grid lines */}
+            {[...Array(8)].map((_, i) => (
+              <line
+                key={i}
+                x1={i * 20}
+                y1="0"
+                x2={i * 20}
+                y2="24"
+                stroke="rgba(14, 165, 233, 0.08)"
+                strokeWidth="0.5"
+              />
+            ))}
+            <line x1="0" y1="12" x2="150" y2="12" stroke="rgba(14, 165, 233, 0.1)" strokeWidth="0.5" />
+            
+            {/* ECG Wave */}
+            <path
+              d="M0,12 L30,12 L40,12 L45,5 L50,19 L55,2 L60,22 L65,12 L80,12 L150,12"
+              fill="none"
+              stroke="url(#ecgGradientCompact)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              style={{ filter: 'drop-shadow(0 0 4px #0EA5E9)' }}
             />
-          ))}
-          <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(14, 165, 233, 0.15)" strokeWidth="0.5" />
-          
-          {/* Main ECG Wave */}
-          <path
-            d="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
-            fill="none"
-            stroke="url(#ecgGradient)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{
-              filter: 'drop-shadow(0 0 6px #0EA5E9)',
+            
+            {/* Traveling Pulse */}
+            <circle r="3" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 5px #BE5103)' }}>
+              <animateMotion
+                path="M0,12 L30,12 L40,12 L45,5 L50,19 L55,2 L60,22 L65,12 L80,12 L150,12"
+                dur="2s"
+                repeatCount="indefinite"
+              />
+            </circle>
+            
+            <defs>
+              <linearGradient id="ecgGradientCompact" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(14, 165, 233, 0.2)" />
+                <stop offset="40%" stopColor="#0EA5E9" />
+                <stop offset="60%" stopColor="#22D3EE" />
+                <stop offset="100%" stopColor="rgba(14, 165, 233, 0.2)" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        
+        {/* Holographic Text */}
+        <div className="flex items-center gap-2">
+          <span 
+            className="text-xs font-medium tracking-wider"
+            style={{ 
+              color: '#22D3EE',
+              textShadow: '0 0 8px rgba(34, 211, 238, 0.4)',
             }}
-          />
-          
-          {/* Scanning Line Effect */}
-          <rect
-            x="0"
-            y="0"
-            width="40"
-            height="40"
-            fill="url(#scanGradient)"
-            style={{
-              animation: 'scanLine 2.5s linear infinite',
-            }}
-          />
-          
-          {/* Traveling Energy Pulse */}
-          <circle r="5" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 8px #BE5103) drop-shadow(0 0 15px #0EA5E9)' }}>
-            <animateMotion
-              path="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
-              dur="2.5s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          
-          {/* Secondary smaller pulse */}
-          <circle r="3" fill="#22D3EE" opacity="0.7" style={{ filter: 'drop-shadow(0 0 4px #22D3EE)' }}>
-            <animateMotion
-              path="M0,20 L60,20 L75,20 L85,8 L95,32 L105,3 L115,37 L125,20 L140,20 L300,20"
-              dur="2.5s"
-              begin="0.3s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          
-          <defs>
-            <linearGradient id="ecgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(14, 165, 233, 0.3)" />
-              <stop offset="30%" stopColor="#0EA5E9" />
-              <stop offset="50%" stopColor="#22D3EE" />
-              <stop offset="70%" stopColor="#0EA5E9" />
-              <stop offset="100%" stopColor="rgba(14, 165, 233, 0.3)" />
-            </linearGradient>
-            <linearGradient id="scanGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="transparent" />
-              <stop offset="50%" stopColor="rgba(34, 211, 238, 0.3)" />
-              <stop offset="100%" stopColor="transparent" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      
-      {/* Futuristic Sound Bars */}
-      <div className="flex items-end justify-center gap-1.5 h-8">
-        {[...Array(9)].map((_, i) => (
-          <div
-            key={i}
-            className="w-1.5 rounded-full"
-            style={{
-              background: `linear-gradient(to top, #0C4A6E, ${i % 2 === 0 ? '#0EA5E9' : '#22D3EE'})`,
-              height: '100%',
-              animation: 'soundBarFloat 0.8s ease-in-out infinite',
-              animationDelay: `${i * 0.08}s`,
-              boxShadow: `0 0 8px ${i % 2 === 0 ? 'rgba(14, 165, 233, 0.6)' : 'rgba(34, 211, 238, 0.6)'}`,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Holographic Text */}
-      <div className="flex items-center gap-3">
-        <span 
-          className="text-sm font-semibold tracking-widest uppercase"
-          style={{ 
-            color: '#22D3EE',
-            textShadow: '0 0 10px rgba(34, 211, 238, 0.5), 0 0 20px rgba(14, 165, 233, 0.3)',
-            letterSpacing: '0.15em',
-          }}
-        >
-          Analyzing
-        </span>
-        <span className="flex gap-1.5">
-          {[...Array(3)].map((_, i) => (
-            <span
-              key={i}
-              className="inline-block w-2 h-2"
-              style={{
-                background: '#0EA5E9',
-                clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-                animation: 'hexPulse 1.5s ease-in-out infinite',
-                animationDelay: `${i * 0.2}s`,
-                filter: 'drop-shadow(0 0 4px #0EA5E9)',
-              }}
-            />
-          ))}
-        </span>
+          >
+            Coach BFC is thinking
+          </span>
+          <span className="flex gap-1">
+            {[...Array(3)].map((_, i) => (
+              <span
+                key={i}
+                className="inline-block w-1 h-1"
+                style={{
+                  background: '#0EA5E9',
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  animation: 'hexPulse 1.2s ease-in-out infinite',
+                  animationDelay: `${i * 0.15}s`,
+                  filter: 'drop-shadow(0 0 3px #0EA5E9)',
+                }}
+              />
+            ))}
+          </span>
+        </div>
       </div>
       
       <style jsx>{`
-        @keyframes helixRotate {
-          0%, 100% { transform: scaleX(1); opacity: 0.8; }
-          50% { transform: scaleX(0.8); opacity: 1; }
-        }
         @keyframes barPulse {
-          0%, 100% { opacity: 0.3; transform: scaleX(0.8); }
-          50% { opacity: 1; transform: scaleX(1); }
-        }
-        @keyframes floatParticle {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
-          50% { transform: translateY(-8px) scale(1.2); opacity: 1; }
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
         }
         @keyframes orbPulse {
-          0%, 100% { transform: scale(1); opacity: 0.9; }
-          50% { transform: scale(1.3); opacity: 1; }
-        }
-        @keyframes scanLine {
-          0% { transform: translateX(-40px); }
-          100% { transform: translateX(300px); }
-        }
-        @keyframes soundBarFloat {
-          0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
-          50% { transform: scaleY(1); opacity: 1; }
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.4); opacity: 1; }
         }
         @keyframes hexPulse {
-          0%, 100% { transform: scale(0.8) rotate(0deg); opacity: 0.4; }
-          50% { transform: scale(1.2) rotate(30deg); opacity: 1; }
+          0%, 100% { transform: scale(0.8); opacity: 0.4; }
+          50% { transform: scale(1.3); opacity: 1; }
         }
       `}</style>
     </div>
