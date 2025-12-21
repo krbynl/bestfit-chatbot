@@ -621,11 +621,54 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   
   const [voiceMode, setVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const voiceModeRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
+
+  // iOS Audio Unlock - must be called from user gesture
+  const unlockAudio = useCallback(async () => {
+    if (audioUnlocked) return true;
+    
+    try {
+      // Create AudioContext for iOS
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContextClass) {
+        const ctx = new AudioContextClass();
+        audioContextRef.current = ctx;
+        
+        // Resume if suspended (iOS requirement)
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        
+        // Create and play a silent buffer to unlock
+        const buffer = ctx.createBuffer(1, 1, 22050);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start(0);
+      }
+      
+      // Also create a silent HTML audio element and play it
+      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD/k0cvAAAAAAAAAAAAAAAAAAAA/+MYxAALaAJEeUAAABn4eDhBGHg4Pd54eBgYGBgAAAPBwfD4fB8Hz/E4Pn/y4Ph8/8uD5//y4+H7//8uD4f//8uD4f///Lg+H///+XB8/////Lg+f///8uDj/+MYxA4LaB5oGYGQAP////+XBwAB////lwcAAf///8uDgAD////y4OAAP////Lg+f////+XB8P/////lwfD//////y4Ph//////+XB8P/////');
+      silentAudio.setAttribute('playsinline', 'true');
+      silentAudio.volume = 0.01;
+      
+      await silentAudio.play().catch(() => {});
+      silentAudio.pause();
+      
+      setAudioUnlocked(true);
+      console.log('🔊 iOS Audio unlocked successfully');
+      return true;
+    } catch (e) {
+      console.log('Audio unlock attempt:', e);
+      return false;
+    }
+  }, [audioUnlocked]);
 
   // Determine animation state
   const getAnimationState = (): 'listening' | 'speaking' | 'loading' | 'idle' => {
@@ -717,10 +760,18 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   }, []);
 
   const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       setIsSpeaking(true);
       
       try {
+        // Ensure audio is unlocked on iOS
+        await unlockAudio();
+        
+        // Resume AudioContext if it exists and is suspended
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
+        
         const binaryString = atob(base64Audio);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -728,7 +779,13 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         }
         const blob = new Blob([bytes], { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
+        
+        // Create audio element with iOS-specific attributes
+        const audio = new Audio();
+        audio.setAttribute('playsinline', 'true');
+        audio.setAttribute('webkit-playsinline', 'true');
+        audio.preload = 'auto';
+        audio.src = url;
         audioRef.current = audio;
         
         audio.onended = () => {
@@ -738,18 +795,45 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         };
         
         audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
           URL.revokeObjectURL(url);
           setIsSpeaking(false);
           reject(e);
         };
         
-        audio.play();
+        // iOS requires waiting for canplaythrough before playing
+        audio.oncanplaythrough = async () => {
+          try {
+            await audio.play();
+          } catch (playError) {
+            console.error('Play error:', playError);
+            // If autoplay fails, show a message but don't reject
+            setIsSpeaking(false);
+            resolve();
+          }
+        };
+        
+        // Fallback: try to play directly after a short delay
+        setTimeout(async () => {
+          if (audio.paused && !audio.ended) {
+            try {
+              await audio.play();
+            } catch (e) {
+              console.log('Fallback play failed:', e);
+            }
+          }
+        }, 100);
+        
+        // Load the audio
+        audio.load();
+        
       } catch (error) {
+        console.error('Audio setup error:', error);
         setIsSpeaking(false);
         reject(error);
       }
     });
-  }, []);
+  }, [unlockAudio]);
 
   const startListening = useCallback(async () => {
     if (!voiceModeRef.current) return;
@@ -839,12 +923,15 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       }
       stopAllAudio();
     } else {
+      // Unlock audio on iOS when user taps Start Voice Chat
+      await unlockAudio();
+      
       setVoiceMode(true);
       voiceModeRef.current = true;
       setShowWelcome(false);
       await startListening();
     }
-  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio]);
+  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio, unlockAudio]);
 
   const handleVoiceTap = useCallback(async () => {
     if (recorderState.isRecording) {
@@ -890,6 +977,9 @@ export function VoiceChat({ className = '' }: { className?: string }) {
 
       if (autoSpeak && response.ai_response) {
         try {
+          // Unlock audio for iOS before playing
+          await unlockAudio();
+          
           const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -907,7 +997,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, autoSpeak, playAudio, usage]);
+  }, [isLoading, autoSpeak, playAudio, usage, unlockAudio]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
