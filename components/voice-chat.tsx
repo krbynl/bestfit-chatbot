@@ -45,10 +45,10 @@ const DAILY_TIPS = [
 
 // Conversation Starters
 const CONVERSATION_STARTERS = [
-  { icon: <Target size={18} />, text: "Help me set a fitness goal", color: '#BE5103' },
-  { icon: <Dumbbell size={18} />, text: "Create a workout plan", color: '#111184' },
-  { icon: <Heart size={18} />, text: "Nutrition advice", color: '#dc2626' },
-  { icon: <Flame size={18} />, text: "How to lose weight", color: '#ea580c' },
+  { icon: <Target size={16} />, text: "Help me set a fitness goal", color: '#BE5103' },
+  { icon: <Dumbbell size={16} />, text: "Create a workout plan", color: '#111184' },
+  { icon: <Heart size={16} />, text: "Nutrition advice", color: '#dc2626' },
+  { icon: <Flame size={16} />, text: "How to lose weight", color: '#ea580c' },
 ];
 
 // Get today's tip based on date (called client-side only)
@@ -77,7 +77,6 @@ const updateStreak = (): UserStreak => {
   const yesterday = new Date(Date.now() - 86400000).toDateString();
   const current = getStreakData();
   
-  // Already visited today
   if (current.lastVisit === today) {
     return current;
   }
@@ -85,21 +84,18 @@ const updateStreak = (): UserStreak => {
   let newStreak: UserStreak;
   
   if (current.lastVisit === yesterday) {
-    // Consecutive day - increase streak
     newStreak = {
       currentStreak: current.currentStreak + 1,
       lastVisit: today,
       totalVisits: current.totalVisits + 1
     };
   } else if (current.lastVisit === '') {
-    // First visit ever
     newStreak = {
       currentStreak: 1,
       lastVisit: today,
       totalVisits: 1
     };
   } else {
-    // Streak broken - reset to 1
     newStreak = {
       currentStreak: 1,
       lastVisit: today,
@@ -109,6 +105,13 @@ const updateStreak = (): UserStreak => {
   
   localStorage.setItem('bfc_streak', JSON.stringify(newStreak));
   return newStreak;
+};
+
+// Detect iOS
+const isIOS = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 };
 
 // Futuristic Pulse Ring Animation Component
@@ -140,7 +143,7 @@ const HeartbeatLine = ({ isActive }: { isActive: boolean }) => {
   if (!isActive) return null;
   
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-16 overflow-hidden opacity-50">
+    <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-16 overflow-hidden opacity-50">
       <svg viewBox="0 0 400 50" className="w-full h-full">
         <path
           d="M0,25 L50,25 L60,25 L70,10 L80,40 L90,5 L100,45 L110,25 L120,25 L400,25"
@@ -178,11 +181,10 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
 
   const colors = getColors();
   const isAnimating = state !== 'idle';
-  const dimensions = size === 'small' ? { outer: 20, middle: 16, inner: 12, logo: 8 } : { outer: 32, middle: 24, inner: 20, logo: 14 };
+  const dimensions = size === 'small' ? { outer: 20, middle: 16, inner: 12, logo: 8 } : { outer: 28, middle: 20, inner: 16, logo: 12 };
 
   return (
     <div className={`relative flex items-center justify-center`} style={{ width: `${dimensions.outer * 4}px`, height: `${dimensions.outer * 4}px` }}>
-      {/* Outer rotating ring */}
       <div
         className={`absolute rounded-full border-4 border-transparent ${isAnimating ? 'animate-spin' : ''}`}
         style={{
@@ -195,7 +197,6 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
         }}
       />
       
-      {/* Middle pulsing ring */}
       <div
         className={`absolute rounded-full border-2 ${isAnimating ? 'animate-pulse' : ''}`}
         style={{
@@ -207,16 +208,8 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
         }}
       />
       
-      {/* Inner activity ring (Apple Watch style) */}
       <svg className="absolute" style={{ width: `${dimensions.inner * 4}px`, height: `${dimensions.inner * 4}px` }} viewBox="0 0 100 100">
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          fill="none"
-          stroke="rgba(190, 81, 3, 0.2)"
-          strokeWidth="8"
-        />
+        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(190, 81, 3, 0.2)" strokeWidth="8" />
         <circle
           cx="50"
           cy="50"
@@ -243,7 +236,6 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
         </circle>
       </svg>
       
-      {/* Center logo container */}
       <div
         className={`relative rounded-full flex items-center justify-center overflow-hidden ${isAnimating ? 'animate-pulse' : ''}`}
         style={{
@@ -261,7 +253,6 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
         />
       </div>
       
-      {/* Pulse rings */}
       <PulseRingAnimation isActive={isAnimating} color={colors.primary} />
     </div>
   );
@@ -272,7 +263,7 @@ const SoundWaveAnimation = ({ isActive }: { isActive: boolean }) => {
   if (!isActive) return null;
   
   return (
-    <div className="flex items-center justify-center gap-1 h-8">
+    <div className="flex items-center justify-center gap-1 h-6 sm:h-8">
       {[...Array(7)].map((_, i) => (
         <div
           key={i}
@@ -299,23 +290,23 @@ const StreakBadge = ({ streak }: { streak: UserStreak }) => {
   if (streak.currentStreak < 1) return null;
   
   const getBadgeColor = () => {
-    if (streak.currentStreak >= 30) return { bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', text: '#78350f' }; // Gold
-    if (streak.currentStreak >= 14) return { bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', text: '#4c1d95' }; // Purple
-    if (streak.currentStreak >= 7) return { bg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', text: '#1e3a8a' }; // Blue
-    if (streak.currentStreak >= 3) return { bg: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)', text: '#064e3b' }; // Green
-    return { bg: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)', text: '#ffffff' }; // Default copper
+    if (streak.currentStreak >= 30) return { bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', text: '#78350f' };
+    if (streak.currentStreak >= 14) return { bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', text: '#4c1d95' };
+    if (streak.currentStreak >= 7) return { bg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', text: '#1e3a8a' };
+    if (streak.currentStreak >= 3) return { bg: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)', text: '#064e3b' };
+    return { bg: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)', text: '#ffffff' };
   };
   
   const colors = getBadgeColor();
   
   return (
     <div 
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold shadow-lg"
+      className="inline-flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg"
       style={{ background: colors.bg, color: colors.text }}
     >
-      <Flame size={16} className="animate-pulse" />
+      <Flame size={14} className="animate-pulse" />
       <span>{streak.currentStreak}-day streak!</span>
-      {streak.currentStreak >= 7 && <Award size={16} />}
+      {streak.currentStreak >= 7 && <Award size={14} />}
     </div>
   );
 };
@@ -326,17 +317,17 @@ const UsageLimitAlert = ({ usage }: { usage: UsageStats | null }) => {
   
   return (
     <div 
-      className="relative p-4 text-center backdrop-blur-sm"
+      className="relative p-3 sm:p-4 text-center backdrop-blur-sm"
       style={{ 
         background: 'linear-gradient(90deg, rgba(220, 38, 38, 0.95) 0%, rgba(190, 81, 3, 0.9) 100%)',
         borderBottom: '1px solid rgba(220, 38, 38, 0.5)'
       }}
     >
-      <div className="flex items-center justify-center gap-3">
-        <Flame size={20} className="text-yellow-300 animate-pulse" />
+      <div className="flex items-center justify-center gap-2 sm:gap-3">
+        <Flame size={18} className="text-yellow-300 animate-pulse" />
         <div>
-          <p className="font-semibold text-white">Daily limit reached!</p>
-          <p className="text-sm text-white/80">
+          <p className="font-semibold text-white text-sm sm:text-base">Daily limit reached!</p>
+          <p className="text-xs sm:text-sm text-white/80">
             {usage.is_premium 
               ? "You've used all 3000 messages today. Limit resets at midnight."
               : "Upgrade to Premium for 3000 messages/day!"
@@ -346,7 +337,7 @@ const UsageLimitAlert = ({ usage }: { usage: UsageStats | null }) => {
       </div>
       {!usage.is_premium && (
         <button 
-          className="mt-3 px-6 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
+          className="mt-2 sm:mt-3 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all hover:scale-105"
           style={{
             background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
             color: '#78350f'
@@ -373,19 +364,19 @@ const DailyTip = () => {
   
   return (
     <div 
-      className="flex items-start gap-3 p-4 rounded-xl mx-4 mb-4"
+      className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl mx-2 sm:mx-4 mb-3 sm:mb-4"
       style={{ 
         background: 'linear-gradient(135deg, rgba(190, 81, 3, 0.15) 0%, rgba(17, 17, 132, 0.1) 100%)',
         border: '1px solid rgba(190, 81, 3, 0.3)'
       }}
     >
-      <div className="text-2xl">{tip.icon}</div>
+      <div className="text-xl sm:text-2xl">{tip.icon}</div>
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <Lightbulb size={14} style={{ color: '#BE5103' }} />
+          <Lightbulb size={12} style={{ color: '#BE5103' }} />
           <span className="text-xs font-semibold" style={{ color: '#BE5103' }}>Daily Tip</span>
         </div>
-        <p className="text-sm" style={{ color: '#F5E6D3' }}>{tip.tip}</p>
+        <p className="text-xs sm:text-sm" style={{ color: '#F5E6D3' }}>{tip.tip}</p>
       </div>
     </div>
   );
@@ -394,14 +385,14 @@ const DailyTip = () => {
 // Conversation Starters Component
 const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }) => {
   return (
-    <div className="px-4 mb-4">
-      <p className="text-xs mb-3" style={{ color: '#A89080' }}>Try asking:</p>
-      <div className="grid grid-cols-2 gap-2">
+    <div className="px-2 sm:px-4 mb-3 sm:mb-4">
+      <p className="text-xs mb-2 sm:mb-3" style={{ color: '#A89080' }}>Try asking:</p>
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
         {CONVERSATION_STARTERS.map((starter, index) => (
           <button
             key={index}
             onClick={() => onSelect(starter.text)}
-            className="flex items-center gap-2 p-3 rounded-xl text-left text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg sm:rounded-xl text-left text-xs sm:text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{
               background: `linear-gradient(135deg, ${starter.color}20 0%, ${starter.color}10 100%)`,
               border: `1px solid ${starter.color}40`,
@@ -409,7 +400,7 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
             }}
           >
             <span style={{ color: starter.color }}>{starter.icon}</span>
-            <span>{starter.text}</span>
+            <span className="line-clamp-2">{starter.text}</span>
           </button>
         ))}
       </div>
@@ -417,22 +408,20 @@ const ConversationStarters = ({ onSelect }: { onSelect: (text: string) => void }
   );
 };
 
-// Futuristic Typing Indicator - Holographic Fitness Tech Style (Compact)
+// Futuristic Typing Indicator Component - Compact for mobile
 const TypingIndicator = () => {
   return (
     <div 
-      className="flex items-center justify-center py-4 px-4 gap-4"
+      className="flex items-center justify-center py-3 sm:py-4 px-3 sm:px-4 gap-3 sm:gap-4"
       style={{
         background: 'linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(20, 15, 10, 0.95) 50%, rgba(12, 10, 18, 0.95) 100%)',
-        borderRadius: '16px',
+        borderRadius: '12px',
       }}
     >
       {/* Main Holographic Container - Compact */}
-      <div className="relative flex items-center justify-center w-14 h-14">
-        
-        {/* Outer Hexagonal Glow Ring */}
+      <div className="relative flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14">
         <div
-          className="absolute w-14 h-14 animate-spin"
+          className="absolute w-10 h-10 sm:w-14 sm:h-14 animate-spin"
           style={{
             animationDuration: '6s',
             background: 'conic-gradient(from 0deg, transparent, #0EA5E9, transparent, #22D3EE, transparent)',
@@ -442,9 +431,8 @@ const TypingIndicator = () => {
           }}
         />
         
-        {/* Middle Tech Ring - Counter Rotation */}
         <div
-          className="absolute w-10 h-10 rounded-full animate-spin"
+          className="absolute w-7 h-7 sm:w-10 sm:h-10 rounded-full animate-spin"
           style={{
             animationDuration: '3s',
             animationDirection: 'reverse',
@@ -453,8 +441,7 @@ const TypingIndicator = () => {
           }}
         />
         
-        {/* DNA Helix Animation - Smaller */}
-        <svg className="absolute w-8 h-8" viewBox="0 0 80 80">
+        <svg className="absolute w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 80 80">
           <path
             d="M25,15 Q40,30 25,45 Q10,60 25,75"
             fill="none"
@@ -499,9 +486,8 @@ const TypingIndicator = () => {
           </defs>
         </svg>
         
-        {/* Center Glowing Orb with Copper Accent */}
         <div
-          className="absolute w-3 h-3 rounded-full"
+          className="absolute w-2 h-2 sm:w-3 sm:h-3 rounded-full"
           style={{
             background: 'radial-gradient(circle, #BE5103 0%, #0EA5E9 60%, transparent 80%)',
             boxShadow: '0 0 8px #BE5103, 0 0 15px rgba(14, 165, 233, 0.4)',
@@ -511,25 +497,14 @@ const TypingIndicator = () => {
       </div>
       
       {/* Right Side - ECG + Text */}
-      <div className="flex flex-col gap-2">
-        {/* Compact ECG Wave */}
-        <div className="relative w-32 h-6 overflow-hidden">
+      <div className="flex flex-col gap-1.5 sm:gap-2">
+        <div className="relative w-24 sm:w-32 h-5 sm:h-6 overflow-hidden">
           <svg viewBox="0 0 150 24" className="w-full h-full" preserveAspectRatio="none">
-            {/* Grid lines */}
             {[...Array(8)].map((_, i) => (
-              <line
-                key={i}
-                x1={i * 20}
-                y1="0"
-                x2={i * 20}
-                y2="24"
-                stroke="rgba(14, 165, 233, 0.08)"
-                strokeWidth="0.5"
-              />
+              <line key={i} x1={i * 20} y1="0" x2={i * 20} y2="24" stroke="rgba(14, 165, 233, 0.08)" strokeWidth="0.5" />
             ))}
             <line x1="0" y1="12" x2="150" y2="12" stroke="rgba(14, 165, 233, 0.1)" strokeWidth="0.5" />
             
-            {/* ECG Wave */}
             <path
               d="M0,12 L30,12 L40,12 L45,5 L50,19 L55,2 L60,22 L65,12 L80,12 L150,12"
               fill="none"
@@ -539,7 +514,6 @@ const TypingIndicator = () => {
               style={{ filter: 'drop-shadow(0 0 4px #0EA5E9)' }}
             />
             
-            {/* Traveling Pulse */}
             <circle r="3" fill="#BE5103" style={{ filter: 'drop-shadow(0 0 5px #BE5103)' }}>
               <animateMotion
                 path="M0,12 L30,12 L40,12 L45,5 L50,19 L55,2 L60,22 L65,12 L80,12 L150,12"
@@ -559,10 +533,9 @@ const TypingIndicator = () => {
           </svg>
         </div>
         
-        {/* Holographic Text */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <span 
-            className="text-xs font-medium tracking-wider"
+            className="text-[10px] sm:text-xs font-medium tracking-wider"
             style={{ 
               color: '#22D3EE',
               textShadow: '0 0 8px rgba(34, 211, 238, 0.4)',
@@ -570,7 +543,7 @@ const TypingIndicator = () => {
           >
             Coach BFC is thinking
           </span>
-          <span className="flex gap-1">
+          <span className="flex gap-0.5 sm:gap-1">
             {[...Array(3)].map((_, i) => (
               <span
                 key={i}
@@ -621,54 +594,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   
   const [voiceMode, setVoiceMode] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const voiceModeRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioUnlockedRef = useRef(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
-
-  // iOS Audio Unlock - must be called from user gesture
-  const unlockAudio = useCallback(async () => {
-    if (audioUnlocked) return true;
-    
-    try {
-      // Create AudioContext for iOS
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioContextClass) {
-        const ctx = new AudioContextClass();
-        audioContextRef.current = ctx;
-        
-        // Resume if suspended (iOS requirement)
-        if (ctx.state === 'suspended') {
-          await ctx.resume();
-        }
-        
-        // Create and play a silent buffer to unlock
-        const buffer = ctx.createBuffer(1, 1, 22050);
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(ctx.destination);
-        source.start(0);
-      }
-      
-      // Also create a silent HTML audio element and play it
-      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD/k0cvAAAAAAAAAAAAAAAAAAAA/+MYxAALaAJEeUAAABn4eDhBGHg4Pd54eBgYGBgAAAPBwfD4fB8Hz/E4Pn/y4Ph8/8uD5//y4+H7//8uD4f//8uD4f///Lg+H///+XB8/////Lg+f///8uDj/+MYxA4LaB5oGYGQAP////+XBwAB////lwcAAf///8uDgAD////y4OAAP////Lg+f////+XB8P/////lwfD//////y4Ph//////+XB8P/////');
-      silentAudio.setAttribute('playsinline', 'true');
-      silentAudio.volume = 0.01;
-      
-      await silentAudio.play().catch(() => {});
-      silentAudio.pause();
-      
-      setAudioUnlocked(true);
-      console.log('🔊 iOS Audio unlocked successfully');
-      return true;
-    } catch (e) {
-      console.log('Audio unlock attempt:', e);
-      return false;
-    }
-  }, [audioUnlocked]);
 
   // Determine animation state
   const getAnimationState = (): 'listening' | 'speaking' | 'loading' | 'idle' => {
@@ -678,19 +609,39 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     return 'idle';
   };
 
+  // Simple iOS audio unlock - called on user interaction
+  const unlockAudioForIOS = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    
+    try {
+      // Create and play a silent audio to unlock iOS audio
+      const silentAudio = document.createElement('audio');
+      silentAudio.setAttribute('playsinline', 'true');
+      silentAudio.setAttribute('webkit-playsinline', 'true');
+      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      silentAudio.volume = 0.01;
+      silentAudio.play().then(() => {
+        silentAudio.pause();
+        audioUnlockedRef.current = true;
+        console.log('iOS audio unlocked');
+      }).catch(() => {
+        // Silent fail is okay
+      });
+    } catch (e) {
+      // Silent fail
+    }
+  }, []);
+
   // Initialize session and streak
   useEffect(() => {
     const initSession = async () => {
       try {
-        // Update streak
         const updatedStreak = updateStreak();
         setStreak(updatedStreak);
         
-        // Create session
         const session = await wordpressClient.createSession();
         setSessionReady(true);
         
-        // Fetch usage stats
         try {
           const usageResponse = await fetch(`${process.env.NEXT_PUBLIC_WORDPRESS_URL || 'https://bestfitcoach.com'}/wp-json/voice-chat/v1/usage`, {
             credentials: 'include'
@@ -705,7 +656,6 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           console.log('Could not fetch usage stats');
         }
         
-        // Show personalized welcome for returning users
         if (session.has_memories) {
           setMessages([{
             id: 'welcome',
@@ -760,18 +710,10 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   }, []);
 
   const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       setIsSpeaking(true);
       
       try {
-        // Ensure audio is unlocked on iOS
-        await unlockAudio();
-        
-        // Resume AudioContext if it exists and is suspended
-        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-          await audioContextRef.current.resume();
-        }
-        
         const binaryString = atob(base64Audio);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -780,8 +722,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         const blob = new Blob([bytes], { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
         
-        // Create audio element with iOS-specific attributes
-        const audio = new Audio();
+        // Create audio with iOS-friendly attributes
+        const audio = document.createElement('audio');
         audio.setAttribute('playsinline', 'true');
         audio.setAttribute('webkit-playsinline', 'true');
         audio.preload = 'auto';
@@ -795,45 +737,28 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         };
         
         audio.onerror = (e) => {
-          console.error('Audio playback error:', e);
+          console.error('Audio error:', e);
           URL.revokeObjectURL(url);
           setIsSpeaking(false);
-          reject(e);
+          resolve(); // Resolve instead of reject to not break the flow
         };
         
-        // iOS requires waiting for canplaythrough before playing
-        audio.oncanplaythrough = async () => {
-          try {
-            await audio.play();
-          } catch (playError) {
-            console.error('Play error:', playError);
-            // If autoplay fails, show a message but don't reject
+        // Play with error handling
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((e) => {
+            console.log('Playback failed:', e);
             setIsSpeaking(false);
             resolve();
-          }
-        };
-        
-        // Fallback: try to play directly after a short delay
-        setTimeout(async () => {
-          if (audio.paused && !audio.ended) {
-            try {
-              await audio.play();
-            } catch (e) {
-              console.log('Fallback play failed:', e);
-            }
-          }
-        }, 100);
-        
-        // Load the audio
-        audio.load();
-        
+          });
+        }
       } catch (error) {
         console.error('Audio setup error:', error);
         setIsSpeaking(false);
-        reject(error);
+        resolve();
       }
     });
-  }, [unlockAudio]);
+  }, []);
 
   const startListening = useCallback(async () => {
     if (!voiceModeRef.current) return;
@@ -887,7 +812,6 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         timestamp: new Date(),
       }]);
 
-      // Update usage counter
       if (usage) {
         setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
       }
@@ -914,6 +838,9 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening, usage]);
 
   const toggleVoiceMode = useCallback(async () => {
+    // Unlock audio on iOS first
+    unlockAudioForIOS();
+    
     if (voiceMode) {
       setVoiceMode(false);
       voiceModeRef.current = false;
@@ -923,15 +850,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       }
       stopAllAudio();
     } else {
-      // Unlock audio on iOS when user taps Start Voice Chat
-      await unlockAudio();
-      
       setVoiceMode(true);
       voiceModeRef.current = true;
       setShowWelcome(false);
       await startListening();
     }
-  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio, unlockAudio]);
+  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio, unlockAudioForIOS]);
 
   const handleVoiceTap = useCallback(async () => {
     if (recorderState.isRecording) {
@@ -942,6 +866,9 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const sendTextMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return;
 
+    // Unlock audio on iOS
+    unlockAudioForIOS();
+    
     setShowWelcome(false);
 
     const userMessage: Message = {
@@ -970,16 +897,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Update usage counter
       if (usage) {
         setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
       }
 
       if (autoSpeak && response.ai_response) {
         try {
-          // Unlock audio for iOS before playing
-          await unlockAudio();
-          
           const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -997,7 +920,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, autoSpeak, playAudio, usage, unlockAudio]);
+  }, [isLoading, autoSpeak, playAudio, usage, unlockAudioForIOS]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1030,17 +953,17 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       {/* Heartbeat line at bottom */}
       <HeartbeatLine isActive={voiceMode && (isListening || isSpeaking || isLoading)} />
       
-      {/* Header */}
+      {/* Header - Responsive */}
       <div 
-        className="relative flex items-center justify-between p-4 backdrop-blur-md"
+        className="relative flex items-center justify-between p-2 sm:p-4 backdrop-blur-md"
         style={{
           background: 'linear-gradient(90deg, rgba(85, 0, 0, 0.9) 0%, rgba(60, 20, 10, 0.85) 50%, rgba(17, 17, 132, 0.4) 100%)',
           borderBottom: '1px solid rgba(190, 81, 3, 0.3)'
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div 
-            className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg overflow-hidden p-1"
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shadow-lg overflow-hidden p-1"
             style={{
               background: 'linear-gradient(135deg, #550000 0%, #BE5103 100%)',
               boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)'
@@ -1049,39 +972,39 @@ export function VoiceChat({ className = '' }: { className?: string }) {
             <img src="/images/icon-192.png" alt="BFC" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h2 className="text-lg font-bold" style={{ color: '#F5E6D3' }}>Best Fit Coach</h2>
-            <p className="text-xs" style={{ color: '#BE5103' }}>Be Better Than Yourself</p>
+            <h2 className="text-sm sm:text-lg font-bold" style={{ color: '#F5E6D3' }}>Best Fit Coach</h2>
+            <p className="text-[10px] sm:text-xs" style={{ color: '#BE5103' }}>Be Better Than Yourself</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Streak Badge */}
           <StreakBadge streak={streak} />
           {/* Clear Chat Button */}
           {messages.length > 0 && (
             <button
               onClick={clearChat}
-              className="p-2 rounded-full transition-all hover:scale-110"
+              className="p-1.5 sm:p-2 rounded-full transition-all hover:scale-110"
               style={{
                 background: 'rgba(85, 0, 0, 0.6)',
                 color: '#E8C4A0'
               }}
               title="Clear chat"
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
             </button>
           )}
           {/* Sound Toggle */}
           <button
             onClick={() => setAutoSpeak(!autoSpeak)}
-            className="flex items-center gap-2 px-4 py-2 text-xs rounded-full transition-all font-medium"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs rounded-full transition-all font-medium"
             style={{
               background: autoSpeak ? 'linear-gradient(135deg, #166534 0%, #15803d 100%)' : 'rgba(85, 0, 0, 0.6)',
               color: autoSpeak ? '#ffffff' : '#E8C4A0',
               boxShadow: autoSpeak ? '0 4px 15px rgba(22, 101, 52, 0.4)' : 'none'
             }}
           >
-            {autoSpeak ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            {autoSpeak ? 'Sound ON' : 'Sound OFF'}
+            {autoSpeak ? <Volume2 size={12} /> : <VolumeX size={12} />}
+            <span className="hidden sm:inline">{autoSpeak ? 'Sound ON' : 'Sound OFF'}</span>
           </button>
         </div>
       </div>
@@ -1091,16 +1014,16 @@ export function VoiceChat({ className = '' }: { className?: string }) {
 
       {/* Error display */}
       {error && (
-        <div className="relative p-3 text-sm text-center backdrop-blur-sm" style={{ background: 'rgba(220, 38, 38, 0.9)', color: '#ffffff' }}>
+        <div className="relative p-2 sm:p-3 text-xs sm:text-sm text-center backdrop-blur-sm" style={{ background: 'rgba(220, 38, 38, 0.9)', color: '#ffffff' }}>
           {error}
           <button onClick={() => setError(null)} className="ml-2 underline hover:opacity-80">Dismiss</button>
         </div>
       )}
 
-      {/* Voice Mode Banner with Animation */}
+      {/* Voice Mode Banner with Animation - Responsive */}
       {voiceMode && (
         <div 
-          className="relative p-6 text-center text-white backdrop-blur-sm flex flex-col items-center justify-center gap-4"
+          className="relative p-4 sm:p-6 text-center text-white backdrop-blur-sm flex flex-col items-center justify-center gap-3 sm:gap-4"
           style={getVoiceBannerStyle()}
         >
           {/* Futuristic Animation */}
@@ -1110,7 +1033,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           {isSpeaking && <SoundWaveAnimation isActive={true} />}
           
           {/* Status Text */}
-          <span className="font-medium text-lg">
+          <span className="font-medium text-sm sm:text-lg">
             {isListening && '🎤 Listening... Tap when done speaking'}
             {isSpeaking && '🔊 Coach is speaking...'}
             {isLoading && '⏳ Processing your message...'}
@@ -1119,22 +1042,22 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         </div>
       )}
 
-      {/* Messages */}
-      <div className="relative flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages - Responsive */}
+      <div className="relative flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4">
         {/* Welcome Screen */}
         {showWelcome && messages.length === 0 && !voiceMode && (
-          <div className="text-center py-6">
-            <div className="relative w-32 h-32 mx-auto mb-4">
+          <div className="text-center py-4 sm:py-6">
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-3 sm:mb-4">
               <FitnessLoadingAnimation state="idle" />
             </div>
-            <p className="text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC</p>
-            <p className="mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
+            <p className="text-lg sm:text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC</p>
+            <p className="text-sm sm:text-base mb-4 sm:mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
             
             {/* Streak celebration for returning users */}
             {streak.currentStreak > 1 && (
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 <StreakBadge streak={streak} />
-                <p className="text-sm mt-2" style={{ color: '#A89080' }}>Keep it up! Consistency is key! 🔥</p>
+                <p className="text-xs sm:text-sm mt-2" style={{ color: '#A89080' }}>Keep it up! Consistency is key! 🔥</p>
               </div>
             )}
             
@@ -1149,7 +1072,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div 
-              className="max-w-[85%] rounded-2xl px-4 py-3 relative group"
+              className="max-w-[90%] sm:max-w-[85%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 relative group"
               style={{
                 background: message.role === 'user'
                   ? 'linear-gradient(135deg, #111184 0%, #1a1a9e 50%, #0d0d6b 100%)'
@@ -1160,21 +1083,21 @@ export function VoiceChat({ className = '' }: { className?: string }) {
                   : '0 4px 20px rgba(0, 0, 0, 0.15)'
               }}
             >
-              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              <p className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">{message.content}</p>
               
               {/* Copy button */}
               <button
                 onClick={() => copyMessage(message.id, message.content)}
-                className="absolute top-2 right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-1 right-1 sm:top-2 sm:right-2 p-1 sm:p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 style={{
                   background: message.role === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
                 }}
                 title="Copy message"
               >
                 {copiedId === message.id ? (
-                  <Check size={14} className={message.role === 'user' ? 'text-green-300' : 'text-green-600'} />
+                  <Check size={12} className={message.role === 'user' ? 'text-green-300' : 'text-green-600'} />
                 ) : (
-                  <Copy size={14} className={message.role === 'user' ? 'text-white/70' : 'text-gray-500'} />
+                  <Copy size={12} className={message.role === 'user' ? 'text-white/70' : 'text-gray-500'} />
                 )}
               </button>
             </div>
@@ -1185,7 +1108,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         {isLoading && !voiceMode && (
           <div className="flex justify-start">
             <div 
-              className="max-w-[85%] rounded-2xl overflow-hidden"
+              className="max-w-[90%] sm:max-w-[85%] rounded-xl sm:rounded-2xl overflow-hidden"
               style={{
                 background: 'linear-gradient(135deg, #F5F0EB 0%, #EDE5DC 100%)',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
@@ -1199,20 +1122,20 @@ export function VoiceChat({ className = '' }: { className?: string }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - Responsive */}
       <div 
-        className="relative p-4 backdrop-blur-md"
+        className="relative p-2 sm:p-4 backdrop-blur-md"
         style={{
           background: 'linear-gradient(90deg, rgba(85, 0, 0, 0.95) 0%, rgba(40, 20, 10, 0.9) 50%, rgba(17, 17, 132, 0.3) 100%)',
           borderTop: '1px solid rgba(190, 81, 3, 0.3)'
         }}
       >
-        {/* Voice Mode Toggle Button */}
-        <div className="flex justify-center mb-4">
+        {/* Voice Mode Toggle Button - Responsive */}
+        <div className="flex justify-center mb-3 sm:mb-4">
           <button
             onClick={voiceMode ? (recorderState.isRecording ? handleVoiceTap : toggleVoiceMode) : toggleVoiceMode}
             disabled={isLoading && !voiceMode}
-            className="flex items-center gap-3 px-8 py-4 rounded-full text-lg font-semibold transition-all transform active:scale-95"
+            className="flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-full text-sm sm:text-lg font-semibold transition-all transform active:scale-95 touch-manipulation"
             style={{
               background: voiceMode
                 ? recorderState.isRecording
@@ -1224,40 +1147,41 @@ export function VoiceChat({ className = '' }: { className?: string }) {
                 ? recorderState.isRecording
                   ? '0 6px 25px rgba(220, 38, 38, 0.5)'
                   : '0 6px 25px rgba(85, 0, 0, 0.5)'
-                : '0 6px 25px rgba(22, 163, 74, 0.5)'
+                : '0 6px 25px rgba(22, 163, 74, 0.5)',
+              WebkitTapHighlightColor: 'transparent'
             }}
           >
             {voiceMode ? (
               recorderState.isRecording ? (
                 <>
-                  <MicOff size={24} />
-                  Tap to Send
+                  <MicOff size={20} />
+                  <span>Tap to Send</span>
                 </>
               ) : (
                 <>
-                  <PhoneOff size={24} />
-                  End Conversation
+                  <PhoneOff size={20} />
+                  <span>End Conversation</span>
                 </>
               )
             ) : (
               <>
-                <Phone size={24} />
-                Start Voice Chat
+                <Phone size={20} />
+                <span>Start Voice Chat</span>
               </>
             )}
           </button>
         </div>
 
-        {/* Text Input */}
+        {/* Text Input - Responsive */}
         {!voiceMode && (
-          <form onSubmit={handleSubmit} className="flex items-center gap-3">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 sm:gap-3">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type a message..."
               disabled={isLoading}
-              className="flex-1 px-5 py-3 rounded-full transition-all focus:outline-none focus:ring-2"
+              className="flex-1 px-3 sm:px-5 py-2 sm:py-3 rounded-full transition-all focus:outline-none focus:ring-2 text-sm sm:text-base"
               style={{
                 background: 'rgba(30, 20, 15, 0.8)',
                 color: '#F5E6D3',
@@ -1267,20 +1191,21 @@ export function VoiceChat({ className = '' }: { className?: string }) {
             <button
               type="submit"
               disabled={!inputText.trim() || isLoading}
-              className="p-3 rounded-full transition-all disabled:opacity-50"
+              className="p-2 sm:p-3 rounded-full transition-all disabled:opacity-50 touch-manipulation"
               style={{
                 background: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)',
                 color: '#ffffff',
-                boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)'
+                boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)',
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <Send size={20} />
+              <Send size={18} />
             </button>
           </form>
         )}
 
-        {/* Disclaimer */}
-        <p className="text-center text-xs mt-3 px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
+        {/* Disclaimer - Responsive */}
+        <p className="text-center text-[10px] sm:text-xs mt-2 sm:mt-3 px-2 sm:px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
           🤖 BFC AI is very smart, not perfect — Please confirm important info.
         </p>
       </div>
