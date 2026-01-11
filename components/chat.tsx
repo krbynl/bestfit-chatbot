@@ -63,6 +63,7 @@ interface GapData {
 }
 
 // Chat component props (for compatibility with pages expecting Chat)
+// These props are accepted for compatibility but the BFC chat ignores most of them
 interface ChatProps {
   id?: string;
   autoResume?: boolean;
@@ -71,6 +72,10 @@ interface ChatProps {
   initialVisibilityType?: string;
   isReadonly?: boolean;
   className?: string;
+  // Additional props from [id]/page.tsx - accepted but ignored
+  initialLastContext?: any;
+  key?: string;
+  [key: string]: any; // Allow any additional props for forward compatibility
 }
 
 // =============================================================================
