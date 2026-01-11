@@ -62,6 +62,17 @@ interface GapData {
   metrics: Record<string, GapMetric>;
 }
 
+// Chat component props (for compatibility with pages expecting Chat)
+interface ChatProps {
+  id?: string;
+  autoResume?: boolean;
+  initialChatModel?: string;
+  initialMessages?: any[];
+  initialVisibilityType?: string;
+  isReadonly?: boolean;
+  className?: string;
+}
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
@@ -630,7 +641,7 @@ const TypingIndicator = () => {
 // MAIN COMPONENT
 // =============================================================================
 
-export function VoiceChat({ className = '' }: { className?: string }) {
+function ChatComponent({ className = '' }: ChatProps) {
   // Existing state
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -756,6 +767,27 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     }, 100);
   }, []);
 
+  // Play audio helper
+  const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
+    return new Promise((resolve) => {
+      setIsSpeaking(true);
+      try {
+        const binaryString = atob(base64Audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = document.createElement('audio');
+        audio.setAttribute('playsinline', 'true');
+        audio.src = url;
+        audioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
+        audio.play().catch(() => { setIsSpeaking(false); resolve(); });
+      } catch (error) { setIsSpeaking(false); resolve(); }
+    });
+  }, []);
+
   // Direct send without input (for programmatic sends)
   const sendTextMessageDirect = useCallback(async (text: string) => {
     setIsLoading(true);
@@ -788,7 +820,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [autoSpeak, usage, refreshBetterSelfGap, fetchBetterSelf]);
+  }, [autoSpeak, usage, refreshBetterSelfGap, fetchBetterSelf, playAudio]);
 
   // Handle celebration close
   const handleCelebrationClose = useCallback(() => {
@@ -873,26 +905,6 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     setMessages([]);
     setShowWelcome(true);
     setError(null);
-  }, []);
-
-  const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setIsSpeaking(true);
-      try {
-        const binaryString = atob(base64Audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        const blob = new Blob([bytes], { type: 'audio/mpeg' });
-        const url = URL.createObjectURL(blob);
-        const audio = document.createElement('audio');
-        audio.setAttribute('playsinline', 'true');
-        audio.src = url;
-        audioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.play().catch(() => { setIsSpeaking(false); resolve(); });
-      } catch (error) { setIsSpeaking(false); resolve(); }
-    });
   }, []);
 
   const startListening = useCallback(async () => {
@@ -1157,4 +1169,19 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   );
 }
 
-export default VoiceChat;
+// =============================================================================
+// EXPORTS - Both named exports for compatibility
+// =============================================================================
+
+// Export as Chat (for pages expecting Chat component)
+export function Chat(props: ChatProps) {
+  return <ChatComponent {...props} />;
+}
+
+// Export as VoiceChat (original name)
+export function VoiceChat(props: ChatProps) {
+  return <ChatComponent {...props} />;
+}
+
+// Default export
+export default Chat;
