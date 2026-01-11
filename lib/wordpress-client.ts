@@ -19,6 +19,7 @@ export interface VoiceMessageResponse {
   audio?: string;
   audio_format?: string;
   error?: string;
+  workouts_logged?: number;  // NEW: Track workout logging
 }
 
 export interface TextMessageResponse {
@@ -27,6 +28,7 @@ export interface TextMessageResponse {
   ai_response?: string;
   has_memory?: boolean;
   error?: string;
+  workouts_logged?: number;  // NEW: Track workout logging
 }
 
 export interface MemoriesResponse {
