@@ -19,7 +19,11 @@ export interface VoiceMessageResponse {
   audio?: string;
   audio_format?: string;
   error?: string;
-  workouts_logged?: number;  // NEW: Track workout logging
+  workouts_logged?: number;  // Track workout logging
+  better_self_created?: {    // NEW: Track Better Self creation
+    challenge_id: number;
+    better_self_name: string;
+  } | null;
 }
 
 export interface TextMessageResponse {
@@ -28,7 +32,11 @@ export interface TextMessageResponse {
   ai_response?: string;
   has_memory?: boolean;
   error?: string;
-  workouts_logged?: number;  // NEW: Track workout logging
+  workouts_logged?: number;  // Track workout logging
+  better_self_created?: {    // NEW: Track Better Self creation
+    challenge_id: number;
+    better_self_name: string;
+  } | null;
 }
 
 export interface MemoriesResponse {
