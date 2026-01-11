@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X } from 'lucide-react';
+import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X, Plus } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { wordpressClient } from '@/lib/wordpress-client';
 
@@ -131,11 +131,6 @@ const updateStreak = (): UserStreak => {
   return newStreak;
 };
 
-const isIOS = () => {
-  if (typeof window === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-};
-
 // Better Self Helpers
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
@@ -262,32 +257,22 @@ const SoundWaveAnimation = ({ isActive }: { isActive: boolean }) => {
 };
 
 // =============================================================================
-// BETTER SELF COMPONENTS
+// COMBINED STREAK + BETTER SELF BADGE (Always Visible)
 // =============================================================================
 
-// Mini Badge (Layer 1 - Always Visible)
-const BetterSelfMiniBadge = ({ 
+const CombinedProgressBadge = ({ 
+  streak, 
   gap, 
-  onClick, 
-  loading 
+  loading,
+  hasChallenge,
+  onClick 
 }: { 
+  streak: UserStreak;
   gap: GapData | null; 
-  onClick: () => void; 
   loading: boolean;
+  hasChallenge: boolean;
+  onClick: () => void;
 }) => {
-  if (loading) {
-    return (
-      <div className="inline-flex items-center gap-1 px-2 py-1 bg-white/10 border border-white/20 rounded-full text-xs text-white/70">
-        <span>🎯</span>
-        <span>...</span>
-      </div>
-    );
-  }
-
-  if (!gap) return null;
-
-  const emoji = getStatusEmoji(gap.overall_status);
-  const color = getStatusColor(gap.overall_status);
   const statusLabels: Record<string, string> = {
     ahead: 'Ahead!',
     on_track: 'On Track',
@@ -298,34 +283,132 @@ const BetterSelfMiniBadge = ({
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1 px-2 py-1 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 rounded-full text-xs text-white cursor-pointer transition-all duration-200"
-      title={`Click to see your progress vs ${gap.better_self_name}`}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+      style={{
+        background: 'linear-gradient(135deg, rgba(190, 81, 3, 0.3) 0%, rgba(85, 0, 0, 0.4) 100%)',
+        border: '1px solid rgba(190, 81, 3, 0.5)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+      }}
+      title={hasChallenge ? `View your Better Self progress` : 'Start your Better Self challenge!'}
     >
-      <span>🎯</span>
-      <span className="font-semibold">W{gap.week}/{gap.total_weeks}</span>
-      <span className="opacity-50">•</span>
-      <span>{emoji}</span>
-      <span className="font-semibold" style={{ color }}>{statusLabels[gap.overall_status] || 'In Progress'}</span>
-      <ChevronDown size={10} className="opacity-60" />
+      {/* Streak Section */}
+      <span className="flex items-center gap-1 text-orange-400">
+        <Flame size={14} className={streak.currentStreak >= 3 ? 'animate-pulse' : ''} />
+        <span className="font-bold">{streak.currentStreak}d</span>
+      </span>
+      
+      {/* Divider */}
+      <span className="text-white/30">|</span>
+      
+      {/* Better Self Section */}
+      {loading ? (
+        <span className="flex items-center gap-1 text-white/60">
+          <span>🎯</span>
+          <span>...</span>
+        </span>
+      ) : hasChallenge && gap ? (
+        <span className="flex items-center gap-1">
+          <span>🎯</span>
+          <span className="text-white/80">W{gap.week}/{gap.total_weeks}</span>
+          <span>{getStatusEmoji(gap.overall_status)}</span>
+          <span style={{ color: getStatusColor(gap.overall_status) }}>
+            {statusLabels[gap.overall_status] || 'In Progress'}
+          </span>
+        </span>
+      ) : (
+        <span className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300">
+          <span>🎯</span>
+          <Plus size={12} />
+          <span>Challenge</span>
+        </span>
+      )}
+      
+      {/* Expand indicator */}
+      <ChevronDown size={12} className="text-white/40 ml-0.5" />
     </button>
   );
 };
+
+// =============================================================================
+// BETTER SELF COMPONENTS
+// =============================================================================
 
 // Expandable Panel (Layer 2)
 const BetterSelfPanel = ({ 
   gap, 
   data,
+  hasChallenge,
   isOpen, 
   onClose,
-  onRecalibrate 
+  onRecalibrate,
+  onStartChallenge
 }: { 
   gap: GapData | null;
   data: BetterSelfData | null;
+  hasChallenge: boolean;
   isOpen: boolean; 
   onClose: () => void;
   onRecalibrate: () => void;
+  onStartChallenge: () => void;
 }) => {
-  if (!isOpen || !gap) return null;
+  if (!isOpen) return null;
+
+  // No challenge - show "Start Challenge" prompt
+  if (!hasChallenge || !gap) {
+    return (
+      <>
+        <div className="fixed inset-0 bg-black/50 z-[999]" onClick={onClose} />
+        <div className="fixed bottom-0 left-0 right-0 z-[1000] p-3 sm:p-4 flex justify-center">
+          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl border border-white/10 text-white overflow-hidden max-w-md w-full shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-black/20">
+              <h3 className="text-sm font-bold tracking-wide">🎯 BETTER SELF CHALLENGER</h3>
+              <button onClick={onClose} className="text-white/60 hover:text-white text-lg p-1"><X size={18} /></button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 text-center">
+              <div className="text-6xl mb-4">🚀</div>
+              <h4 className="text-xl font-bold mb-2">Start Your Transformation</h4>
+              <p className="text-white/70 text-sm mb-6">
+                Compete against your future self! Set goals, track progress, and become the person you want to be.
+              </p>
+              
+              <div className="space-y-3 text-left bg-white/5 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-2xl">👤</span>
+                  <span className="text-white/80">Create your "Better Self" - the you in 12 weeks</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-2xl">📊</span>
+                  <span className="text-white/80">Track weekly progress & compete with projections</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-2xl">🏆</span>
+                  <span className="text-white/80">Unlock milestones & celebrate achievements</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={onStartChallenge}
+                className="w-full py-3 rounded-xl font-bold text-base transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                  boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4)',
+                }}
+              >
+                🎯 Start My Challenge
+              </button>
+              
+              <p className="text-white/40 text-xs mt-4">
+                Just tell Coach BFC your goals and we'll set it up together!
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   const statusColor = getStatusColor(gap.overall_status);
   const statusEmoji = getStatusEmoji(gap.overall_status);
@@ -475,25 +558,6 @@ const CelebrationModal = ({ celebration, onClose }: { celebration: string; onClo
 // OTHER UI COMPONENTS
 // =============================================================================
 
-const StreakBadge = ({ streak }: { streak: UserStreak }) => {
-  if (streak.currentStreak < 1) return null;
-  const getBadgeColor = () => {
-    if (streak.currentStreak >= 30) return { bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', text: '#78350f' };
-    if (streak.currentStreak >= 14) return { bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', text: '#4c1d95' };
-    if (streak.currentStreak >= 7) return { bg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', text: '#1e3a8a' };
-    if (streak.currentStreak >= 3) return { bg: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)', text: '#064e3b' };
-    return { bg: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)', text: '#ffffff' };
-  };
-  const colors = getBadgeColor();
-  return (
-    <div className="inline-flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg" style={{ background: colors.bg, color: colors.text }}>
-      <Flame size={14} className="animate-pulse" />
-      <span>{streak.currentStreak}d</span>
-      {streak.currentStreak >= 7 && <Award size={14} />}
-    </div>
-  );
-};
-
 const UsageLimitAlert = ({ usage }: { usage: UsageStats | null }) => {
   if (!usage || usage.remaining > 0) return null;
   return (
@@ -586,6 +650,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const [betterSelfData, setBetterSelfData] = useState<BetterSelfData | null>(null);
   const [betterSelfGap, setBetterSelfGap] = useState<GapData | null>(null);
   const [betterSelfLoading, setBetterSelfLoading] = useState(true);
+  const [betterSelfHasChallenge, setBetterSelfHasChallenge] = useState(false);
   const [betterSelfPanelOpen, setBetterSelfPanelOpen] = useState(false);
   const [celebrations, setCelebrations] = useState<string[]>([]);
   const [currentCelebrationIndex, setCurrentCelebrationIndex] = useState(0);
@@ -603,13 +668,18 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
+        setBetterSelfHasChallenge(data.success && data.has_challenge);
         if (data.success && data.has_challenge) {
           setBetterSelfData(data.better_self);
           setBetterSelfGap(data.gap);
+        } else {
+          setBetterSelfData(null);
+          setBetterSelfGap(null);
         }
       }
     } catch (err) {
       console.log('Could not fetch Better Self data');
+      setBetterSelfHasChallenge(false);
     } finally {
       setBetterSelfLoading(false);
     }
@@ -640,7 +710,6 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           setBetterSelfGap(data.gap);
         }
       }
-      // Also check for new celebrations
       await checkCelebrations();
     } catch (err) {
       console.log('Could not refresh gap');
@@ -663,6 +732,63 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       console.error('Recalibrate failed:', err);
     }
   }, [fetchBetterSelf]);
+
+  // Start Challenge - sends message to coach
+  const handleStartChallenge = useCallback(() => {
+    setBetterSelfPanelOpen(false);
+    setShowWelcome(false);
+    // Send a message to coach to start the challenge flow
+    const starterMessage = "I want to start a Better Self challenge! Help me set up my goals and create my future self to compete against.";
+    setInputText('');
+    
+    // Add user message
+    const userMessage: Message = { 
+      id: `user-${Date.now()}`, 
+      role: 'user', 
+      content: starterMessage, 
+      timestamp: new Date() 
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Trigger the actual send
+    setTimeout(() => {
+      sendTextMessageDirect(starterMessage);
+    }, 100);
+  }, []);
+
+  // Direct send without input (for programmatic sends)
+  const sendTextMessageDirect = useCallback(async (text: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await wordpressClient.sendTextMessage(text);
+      if (!response.success) throw new Error(response.error || 'Failed to get response');
+
+      setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.ai_response || '', timestamp: new Date() }]);
+      if (usage) setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
+
+      if (response.workouts_logged && response.workouts_logged > 0) {
+        await refreshBetterSelfGap();
+      }
+
+      // Re-fetch better self in case challenge was created
+      await fetchBetterSelf();
+
+      if (autoSpeak && response.ai_response) {
+        try {
+          const audioBlob = await wordpressClient.generateSpeech(response.ai_response, 'onyx');
+          const reader = new FileReader();
+          reader.onloadend = () => { const base64 = (reader.result as string).split(',')[1]; playAudio(base64); };
+          reader.readAsDataURL(audioBlob);
+        } catch (speechErr) {}
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [autoSpeak, usage, refreshBetterSelfGap, fetchBetterSelf]);
 
   // Handle celebration close
   const handleCelebrationClose = useCallback(() => {
@@ -798,10 +924,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       if (usage) setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
       setIsLoading(false);
 
-      // Check for workout logging and refresh Better Self
       if (response.workouts_logged && response.workouts_logged > 0) {
         await refreshBetterSelfGap();
       }
+
+      // Re-fetch better self in case challenge was created via voice
+      await fetchBetterSelf();
 
       if (response.audio && autoSpeak && voiceModeRef.current) await playAudio(response.audio);
       if (voiceModeRef.current) setTimeout(() => startListening(), 500);
@@ -811,7 +939,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       setIsLoading(false);
       if (voiceModeRef.current) setTimeout(() => startListening(), 1000);
     }
-  }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening, usage, refreshBetterSelfGap]);
+  }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening, usage, refreshBetterSelfGap, fetchBetterSelf]);
 
   const toggleVoiceMode = useCallback(async () => {
     unlockAudioForIOS();
@@ -851,10 +979,12 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.ai_response || '', timestamp: new Date() }]);
       if (usage) setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
 
-      // Check for workout logging and refresh Better Self
       if (response.workouts_logged && response.workouts_logged > 0) {
         await refreshBetterSelfGap();
       }
+
+      // Re-fetch better self in case challenge was created
+      await fetchBetterSelf();
 
       if (autoSpeak && response.ai_response) {
         try {
@@ -869,7 +999,7 @@ export function VoiceChat({ className = '' }: { className?: string }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, autoSpeak, playAudio, usage, unlockAudioForIOS, refreshBetterSelfGap]);
+  }, [isLoading, autoSpeak, playAudio, usage, unlockAudioForIOS, refreshBetterSelfGap, fetchBetterSelf]);
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); sendTextMessage(inputText); };
   const handleStarterSelect = (text: string) => { sendTextMessage(text); };
@@ -901,15 +1031,14 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           </div>
         </div>
         
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Streak Badge */}
-          <StreakBadge streak={streak} />
-          
-          {/* Better Self Badge - NEW! */}
-          <BetterSelfMiniBadge 
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Combined Progress Badge (Streak + Better Self) */}
+          <CombinedProgressBadge 
+            streak={streak}
             gap={betterSelfGap} 
-            onClick={() => setBetterSelfPanelOpen(true)} 
             loading={betterSelfLoading}
+            hasChallenge={betterSelfHasChallenge}
+            onClick={() => setBetterSelfPanelOpen(true)}
           />
           
           {/* Clear Chat */}
@@ -920,9 +1049,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
           )}
           
           {/* Sound Toggle */}
-          <button onClick={() => setAutoSpeak(!autoSpeak)} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs rounded-full transition-all font-medium" style={{ background: autoSpeak ? 'linear-gradient(135deg, #166534 0%, #15803d 100%)' : 'rgba(85, 0, 0, 0.6)', color: autoSpeak ? '#ffffff' : '#E8C4A0', boxShadow: autoSpeak ? '0 4px 15px rgba(22, 101, 52, 0.4)' : 'none' }}>
-            {autoSpeak ? <Volume2 size={12} /> : <VolumeX size={12} />}
-            <span className="hidden sm:inline">{autoSpeak ? 'Sound ON' : 'Sound OFF'}</span>
+          <button onClick={() => setAutoSpeak(!autoSpeak)} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs rounded-full transition-all font-medium" style={{ background: autoSpeak ? 'linear-gradient(135deg, #166534 0%, #15803d 100%)' : 'rgba(85, 0, 0, 0.6)', color: autoSpeak ? '#ffffff' : '#E8C4A0', boxShadow: autoSpeak ? '0 4px 15px rgba(22, 101, 52, 0.4)' : 'none' }}>
+            {autoSpeak ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
         </div>
       </div>
@@ -931,9 +1059,11 @@ export function VoiceChat({ className = '' }: { className?: string }) {
       <BetterSelfPanel 
         gap={betterSelfGap} 
         data={betterSelfData}
+        hasChallenge={betterSelfHasChallenge}
         isOpen={betterSelfPanelOpen} 
         onClose={() => setBetterSelfPanelOpen(false)}
         onRecalibrate={handleRecalibrate}
+        onStartChallenge={handleStartChallenge}
       />
 
       {/* Celebration Modal */}
@@ -975,12 +1105,6 @@ export function VoiceChat({ className = '' }: { className?: string }) {
             </div>
             <p className="text-lg sm:text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC</p>
             <p className="text-sm sm:text-base mb-4 sm:mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
-            {streak.currentStreak > 1 && (
-              <div className="mb-4 sm:mb-6">
-                <StreakBadge streak={streak} />
-                <p className="text-xs sm:text-sm mt-2" style={{ color: '#A89080' }}>Keep it up! Consistency is key! 🔥</p>
-              </div>
-            )}
             <DailyTip />
             <ConversationStarters onSelect={handleStarterSelect} />
           </div>
