@@ -368,7 +368,11 @@ const BetterSelfPanel = ({
 
             {/* Content */}
             <div className="p-6 text-center">
-              <div className="text-6xl mb-4">🚀</div>
+              <img 
+  src="https://bestfitcoach.com/wp-content/uploads/2025/10/best-fit-coach-icon-only.png" 
+  alt="Best Fit Coach" 
+  className="w-20 h-20 mx-auto mb-4 object-contain"
+/>
               <h4 className="text-xl font-bold mb-2">Start Your Transformation</h4>
               <p className="text-white/70 text-sm mb-6">
                 Compete against your future self! Set goals, track progress, and become the person you want to be.
