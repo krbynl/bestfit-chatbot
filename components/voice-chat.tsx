@@ -669,7 +669,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const fetchBetterSelf = useCallback(async () => {
     try {
       setBetterSelfLoading(true);
-      const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self`, { credentials: 'include' });
+      const visitorId = localStorage.getItem('vc_user_id') || '';
+const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setBetterSelfHasChallenge(data.success && data.has_challenge);
@@ -692,7 +693,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   // Check for celebrations
   const checkCelebrations = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/celebrations`, { credentials: 'include' });
+      const visitorId = localStorage.getItem('vc_user_id') || '';
+const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/celebrations?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.has_celebrations) {
@@ -707,7 +709,8 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   // Refresh gap after workout
   const refreshBetterSelfGap = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/gap`, { credentials: 'include' });
+     const visitorId = localStorage.getItem('vc_user_id') || '';
+const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/gap?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -724,10 +727,11 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const handleRecalibrate = useCallback(async () => {
     if (!confirm('Fresh start with the same goals?')) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/recalibrate`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const visitorId = localStorage.getItem('vc_user_id') || '';
+const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/recalibrate?user_id=${encodeURIComponent(visitorId)}`, {
+  method: 'POST',
+  credentials: 'include',
+});
       if (response.ok) {
         await fetchBetterSelf();
         setBetterSelfPanelOpen(false);
