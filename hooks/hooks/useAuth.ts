@@ -1,73 +1,165 @@
-import { useState, useEffect } from 'react';
-import { 
-  BFCAuthData, 
-  getStoredAuth, 
-  storeAuth, 
-  clearAuth, 
-  validateAuthToken,
-  getLoginUrl 
-} from '@/lib/auth';
+/**
+ * BFC Auth Hook
+ * 
+ * File: hooks/useAuth.ts
+ * 
+ * React hook for managing authentication state
+ * Handles token validation from URL and persistent auth
+ */
 
-export function useAuth() {
-  const [auth, setAuth] = useState<BFCAuthData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+'use client';
 
-  useEffect(() => {
-    async function initAuth() {
-      setLoading(true);
-      setError(null);
-      
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('auth_token');
+import { useState, useEffect, useCallback } from 'react';
+import { wordpressClient } from '@/lib/wordpress-client';
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  userId: string | null;
+  userName: string | null;
+}
+
+export interface UseAuthReturn extends AuthState {
+  logout: () => void;
+  loginUrl: string;
+  checkAuth: () => void;
+}
+
+/**
+ * Hook for managing BFC authentication
+ * 
+ * Usage:
+ * ```tsx
+ * const { isAuthenticated, isLoading, userName, logout, loginUrl } = useAuth();
+ * 
+ * if (isLoading) return <Loading />;
+ * if (!isAuthenticated) return <a href={loginUrl}>Login</a>;
+ * return <div>Welcome, {userName}!</div>;
+ * ```
+ */
+export function useAuth(): UseAuthReturn {
+  const [state, setState] = useState<AuthState>({
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+    userId: null,
+    userName: null,
+  });
+
+  /**
+   * Check for auth token in URL and validate
+   */
+  const initializeAuth = useCallback(async () => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      // Check if we're in browser
+      if (typeof window === 'undefined') {
+        setState(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+
+      // Check URL for auth_token
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('auth_token');
+
+      if (token) {
+        console.log('BFC Auth: Found token in URL, validating...');
         
-        if (token) {
-          const authData = await validateAuthToken(token);
+        const authData = await wordpressClient.validateToken(token);
+        
+        if (authData) {
+          // Clean URL by removing the token
+          urlParams.delete('auth_token');
+          const newUrl = urlParams.toString() 
+            ? `${window.location.pathname}?${urlParams.toString()}`
+            : window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
           
-          if (authData) {
-            storeAuth(authData);
-            setAuth(authData);
-            
-            // Clean URL
-            urlParams.delete('auth_token');
-            const newUrl = urlParams.toString() 
-              ? `${window.location.pathname}?${urlParams.toString()}`
-              : window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-          } else {
-            setError('Authentication failed. Please try logging in again.');
-          }
+          setState({
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            userId: authData.user_id,
+            userName: authData.name,
+          });
           
-          setLoading(false);
+          console.log('BFC Auth: Authenticated as', authData.name);
+          return;
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: 'Authentication failed. Please try logging in again.',
+          }));
           return;
         }
       }
-      
-      const storedAuth = getStoredAuth();
-      if (storedAuth) {
-        setAuth(storedAuth);
+
+      // No token in URL - check if already authenticated
+      if (wordpressClient.isUserAuthenticated()) {
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+          userId: wordpressClient.getUserId(),
+          userName: wordpressClient.getUserName(),
+        });
+        console.log('BFC Auth: Restored from storage');
+      } else {
+        // Not authenticated
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+          userId: null,
+          userName: null,
+        });
       }
-      
-      setLoading(false);
+    } catch (error) {
+      console.error('BFC Auth: Error during initialization', error);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: 'An error occurred during authentication.',
+      }));
     }
-    
-    initAuth();
   }, []);
 
-  const logout = () => {
-    clearAuth();
-    setAuth(null);
-  };
+  /**
+   * Logout and clear auth data
+   */
+  const logout = useCallback(() => {
+    wordpressClient.logout();
+    setState({
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      userId: null,
+      userName: null,
+    });
+    console.log('BFC Auth: Logged out');
+  }, []);
+
+  /**
+   * Re-check authentication status
+   */
+  const checkAuth = useCallback(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Initialize on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   return {
-    auth,
-    loading,
-    error,
-    isAuthenticated: auth !== null,
-    userId: auth?.user_id || null,
-    userName: auth?.name || null,
+    ...state,
     logout,
-    loginUrl: getLoginUrl(),
+    loginUrl: wordpressClient.getLoginUrl(),
+    checkAuth,
   };
 }
+
+export default useAuth;
