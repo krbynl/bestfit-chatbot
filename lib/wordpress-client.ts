@@ -95,7 +95,7 @@ export async function validateAuthToken(token: string, baseUrl: string): Promise
   try {
     console.log('BFC Auth: Validating token...');
     
-    const response = await fetch(`${baseUrl}/wp-json/voice-coach/v1/auth/validate`, {
+    const response = await fetch(`${baseUrl}/wp-json/voice-chat/v1/auth/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
