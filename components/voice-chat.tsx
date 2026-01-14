@@ -57,7 +57,7 @@ interface GapData {
   total_weeks: number;
   progress_percent: number;
   days_remaining: number;
-  overall_status: 'ahead' | 'on_track' | 'slightly_behind' | 'behind';
+  overall_status: string;  // ✅ Flexible
   better_self_name: string;
   why_statement: string;
   metrics: Record<string, GapMetric>;
