@@ -48,7 +48,7 @@ interface GapMetric {
   projected: number;
   goal: number;
   diff: number;
-  status: string;  // ✅ Flexible
+  status: string;
   unit: string;
 }
 
@@ -57,13 +57,13 @@ interface GapData {
   total_weeks: number;
   progress_percent: number;
   days_remaining: number;
-  overall_status: string;  // ✅ Flexible
+  overall_status: string;
   better_self_name: string;
   why_statement: string;
   metrics: Record<string, GapMetric>;
 }
 
-// Chat component props (for compatibility with pages expecting Chat)
+// Chat component props
 interface ChatProps {
   id?: string;
   autoResume?: boolean;
@@ -272,7 +272,7 @@ const SoundWaveAnimation = ({ isActive }: { isActive: boolean }) => {
 };
 
 // =============================================================================
-// COMBINED STREAK + BETTER SELF BADGE (Always Visible)
+// COMBINED STREAK + BETTER SELF BADGE
 // =============================================================================
 
 const CombinedProgressBadge = ({ 
@@ -306,16 +306,11 @@ const CombinedProgressBadge = ({
       }}
       title={hasChallenge ? `View your Better Self progress` : 'Start your Better Self challenge!'}
     >
-      {/* Streak Section */}
       <span className="flex items-center gap-1 text-orange-400">
         <Flame size={14} className={streak.currentStreak >= 3 ? 'animate-pulse' : ''} />
         <span className="font-bold">{streak.currentStreak}d</span>
       </span>
-      
-      {/* Divider */}
       <span className="text-white/30">|</span>
-      
-      {/* Better Self Section */}
       {loading ? (
         <span className="flex items-center gap-1 text-white/60">
           <span>🎯</span>
@@ -337,8 +332,6 @@ const CombinedProgressBadge = ({
           <span>Challenge</span>
         </span>
       )}
-      
-      {/* Expand indicator */}
       <ChevronDown size={12} className="text-white/40 ml-0.5" />
     </button>
   );
@@ -348,7 +341,6 @@ const CombinedProgressBadge = ({
 // BETTER SELF COMPONENTS
 // =============================================================================
 
-// Expandable Panel (Layer 2)
 const BetterSelfPanel = ({ 
   gap, 
   data,
@@ -368,27 +360,22 @@ const BetterSelfPanel = ({
 }) => {
   if (!isOpen) return null;
 
-  // No challenge - show "Start Challenge" prompt
   if (!hasChallenge || !gap) {
     return (
       <>
         <div className="fixed inset-0 bg-black/50 z-[999]" onClick={onClose} />
         <div className="fixed bottom-0 left-0 right-0 z-[1000] p-3 sm:p-4 flex justify-center">
           <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl border border-white/10 text-white overflow-hidden max-w-md w-full shadow-2xl">
-            {/* Header */}
             <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-black/20">
               <h3 className="text-sm font-bold tracking-wide">🎯 BETTER SELF CHALLENGER</h3>
               <button onClick={onClose} className="text-white/60 hover:text-white text-lg p-1"><X size={18} /></button>
             </div>
-
-            {/* Content */}
             <div className="p-6 text-center">
               <div className="text-6xl mb-4">🚀</div>
               <h4 className="text-xl font-bold mb-2">Start Your Transformation</h4>
               <p className="text-white/70 text-sm mb-6">
                 Compete against your future self! Set goals, track progress, and become the person you want to be.
               </p>
-              
               <div className="space-y-3 text-left bg-white/5 rounded-xl p-4 mb-6">
                 <div className="flex items-center gap-3 text-sm">
                   <span className="text-2xl">👤</span>
@@ -403,7 +390,6 @@ const BetterSelfPanel = ({
                   <span className="text-white/80">Unlock milestones & celebrate achievements</span>
                 </div>
               </div>
-              
               <button 
                 onClick={onStartChallenge}
                 className="w-full py-3 rounded-xl font-bold text-base transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -414,7 +400,6 @@ const BetterSelfPanel = ({
               >
                 🎯 Start My Challenge
               </button>
-              
               <p className="text-white/40 text-xs mt-4">
                 Just tell Coach BFC your goals and we'll set it up together!
               </p>
@@ -431,19 +416,13 @@ const BetterSelfPanel = ({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 z-[999]" onClick={onClose} />
-      
-      {/* Panel */}
       <div className="fixed bottom-0 left-0 right-0 z-[1000] p-3 sm:p-4 flex justify-center">
         <div className="bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl border border-white/10 text-white overflow-hidden max-w-md w-full shadow-2xl">
-          {/* Header */}
           <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 bg-black/20">
             <h3 className="text-sm font-bold tracking-wide">🎯 BETTER SELF CHALLENGER</h3>
             <button onClick={onClose} className="text-white/60 hover:text-white text-lg p-1"><X size={18} /></button>
           </div>
-
-          {/* Progress */}
           <div className="p-4">
             <div className="flex justify-between text-xs text-white/60 mb-2">
               <span>👤 You</span>
@@ -463,14 +442,10 @@ const BetterSelfPanel = ({
               <span>{gap.days_remaining} days left</span>
             </div>
           </div>
-
-          {/* Status */}
           <div className="flex items-center justify-center gap-2 mx-4 py-2 rounded-lg border" style={{ borderColor: statusColor, background: 'rgba(255,255,255,0.05)' }}>
             <span className="text-lg">{statusEmoji}</span>
             <span className="font-bold text-sm" style={{ color: statusColor }}>{statusText}</span>
           </div>
-
-          {/* Metrics */}
           <div className="p-4">
             <h4 className="text-xs text-white/50 mb-2 tracking-wide">📊 YOUR METRICS vs {gap.better_self_name.toUpperCase()}</h4>
             <div className="space-y-1.5">
@@ -490,15 +465,11 @@ const BetterSelfPanel = ({
               ))}
             </div>
           </div>
-
-          {/* Actions */}
           <div className="flex gap-2 px-4 pb-4">
             <button onClick={onRecalibrate} className="flex-1 py-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg font-semibold text-xs transition-colors">
               🔄 Recalibrate
             </button>
           </div>
-
-          {/* Why */}
           {gap.why_statement && (
             <div className="px-4 py-3 bg-black/20 border-t border-white/10">
               <p className="text-xs text-white/50 mb-1">💭 Your WHY:</p>
@@ -511,7 +482,6 @@ const BetterSelfPanel = ({
   );
 };
 
-// Celebration Modal
 const CelebrationModal = ({ celebration, onClose }: { celebration: string; onClose: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 5000);
@@ -525,7 +495,6 @@ const CelebrationModal = ({ celebration, onClose }: { celebration: string; onClo
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-[9999]">
-      {/* Confetti */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(30)].map((_, i) => (
           <div
@@ -540,8 +509,6 @@ const CelebrationModal = ({ celebration, onClose }: { celebration: string; onClo
           />
         ))}
       </div>
-
-      {/* Modal */}
       <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#16213e] rounded-2xl p-8 text-center max-w-sm w-11/12 border-2 border-yellow-500/30 shadow-2xl animate-bounce-in">
         <button onClick={onClose} className="absolute top-3 right-3 text-white/50 hover:text-white text-xl">✕</button>
         <div className="text-5xl mb-4 animate-bounce">🏆</div>
@@ -553,7 +520,6 @@ const CelebrationModal = ({ celebration, onClose }: { celebration: string; onClo
           Keep Going! 💪
         </button>
       </div>
-
       <style jsx>{`
         @keyframes confettiFall {
           0% { transform: translateY(0) rotateZ(0); opacity: 1; }
@@ -642,7 +608,7 @@ const TypingIndicator = () => {
 };
 
 // =============================================================================
-// AUTH LOADING SCREEN
+// AUTH SCREENS
 // =============================================================================
 
 const AuthLoadingScreen = () => {
@@ -653,10 +619,6 @@ const AuthLoadingScreen = () => {
     </div>
   );
 };
-
-// =============================================================================
-// LOGIN REQUIRED SCREEN
-// =============================================================================
 
 const LoginRequiredScreen = ({ loginUrl }: { loginUrl: string }) => {
   return (
@@ -685,10 +647,6 @@ const LoginRequiredScreen = ({ loginUrl }: { loginUrl: string }) => {
     </div>
   );
 };
-
-// =============================================================================
-// AUTH ERROR SCREEN
-// =============================================================================
 
 const AuthErrorScreen = ({ error, loginUrl }: { error: string; loginUrl: string }) => {
   return (
@@ -719,8 +677,10 @@ const AuthErrorScreen = ({ error, loginUrl }: { error: string; loginUrl: string 
 
 function ChatComponent({ className = '' }: ChatProps) {
   // =========================================================================
-  // AUTH HOOK - MUST BE FIRST
+  // ALL HOOKS MUST BE CALLED FIRST - UNCONDITIONALLY
   // =========================================================================
+  
+  // Auth hook
   const { 
     isAuthenticated, 
     isLoading: authLoading, 
@@ -730,7 +690,7 @@ function ChatComponent({ className = '' }: ChatProps) {
     loginUrl 
   } = useAuth();
 
-  // Existing state
+  // State hooks
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -754,37 +714,20 @@ function ChatComponent({ className = '' }: ChatProps) {
   const [celebrations, setCelebrations] = useState<string[]>([]);
   const [currentCelebrationIndex, setCurrentCelebrationIndex] = useState(0);
 
+  // Refs
   const voiceModeRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUnlockedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Voice recorder hook
   const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
 
   // =========================================================================
-  // AUTH STATE SCREENS
+  // CALLBACKS (defined before useEffect that uses them)
   // =========================================================================
   
-  // Show loading while auth is checking
-  if (authLoading) {
-    return <AuthLoadingScreen />;
-  }
-
-  // Show error if auth failed
-  if (authError) {
-    return <AuthErrorScreen error={authError} loginUrl={loginUrl} />;
-  }
-
-  // Require authentication - uncomment to enforce login
-  // if (!isAuthenticated) {
-  //   return <LoginRequiredScreen loginUrl={loginUrl} />;
-  // }
-
-  // =========================================================================
-  // REST OF COMPONENT (only renders when auth is complete)
-  // =========================================================================
-
-  // Fetch Better Self data
-  const fetchBetterSelf = async () => {
+  const fetchBetterSelf = useCallback(async () => {
     try {
       setBetterSelfLoading(true);
       const response = await wordpressClient.getBetterSelf();
@@ -802,10 +745,9 @@ function ChatComponent({ className = '' }: ChatProps) {
     } finally {
       setBetterSelfLoading(false);
     }
-  };
+  }, []);
 
-  // Check for celebrations
-  const checkCelebrations = async () => {
+  const checkCelebrations = useCallback(async () => {
     try {
       const response = await wordpressClient.checkCelebrations();
       if (response.success && response.has_celebrations) {
@@ -814,10 +756,9 @@ function ChatComponent({ className = '' }: ChatProps) {
     } catch (err) {
       console.log('Could not check celebrations');
     }
-  };
+  }, []);
 
-  // Refresh gap after workout
-  const refreshBetterSelfGap = async () => {
+  const refreshBetterSelfGap = useCallback(async () => {
     try {
       const response = await wordpressClient.getBetterSelfGap();
       if (response.success) {
@@ -827,42 +768,9 @@ function ChatComponent({ className = '' }: ChatProps) {
     } catch (err) {
       console.log('Could not refresh gap');
     }
-  };
+  }, [checkCelebrations]);
 
-  // Recalibrate Better Self
-  const handleRecalibrate = async () => {
-    if (!confirm('Fresh start with the same goals?')) return;
-    try {
-      await wordpressClient.recalibrateBetterSelf();
-      await fetchBetterSelf();
-      setBetterSelfPanelOpen(false);
-    } catch (err) {
-      console.error('Recalibrate failed:', err);
-    }
-  };
-
-  // Start Challenge - sends message to coach
-  const handleStartChallenge = () => {
-    setBetterSelfPanelOpen(false);
-    setShowWelcome(false);
-    const starterMessage = "I want to start a Better Self challenge! Help me set up my goals and create my future self to compete against.";
-    setInputText('');
-    
-    const userMessage: Message = { 
-      id: `user-${Date.now()}`, 
-      role: 'user', 
-      content: starterMessage, 
-      timestamp: new Date() 
-    };
-    setMessages(prev => [...prev, userMessage]);
-    
-    setTimeout(() => {
-      sendTextMessageDirect(starterMessage);
-    }, 100);
-  };
-
-  // Play audio helper
-  const playAudio = async (base64Audio: string): Promise<void> => {
+  const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
     return new Promise((resolve) => {
       setIsSpeaking(true);
       try {
@@ -880,9 +788,84 @@ function ChatComponent({ className = '' }: ChatProps) {
         audio.play().catch(() => { setIsSpeaking(false); resolve(); });
       } catch (error) { setIsSpeaking(false); resolve(); }
     });
+  }, []);
+
+  const unlockAudioForIOS = useCallback(() => {
+    if (audioUnlockedRef.current) return;
+    try {
+      const silentAudio = document.createElement('audio');
+      silentAudio.setAttribute('playsinline', 'true');
+      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      silentAudio.volume = 0.01;
+      silentAudio.play().then(() => { silentAudio.pause(); audioUnlockedRef.current = true; }).catch(() => {});
+    } catch (e) {}
+  }, []);
+
+  // =========================================================================
+  // EFFECTS
+  // =========================================================================
+
+  // Initialize session when auth is ready
+  useEffect(() => {
+    if (authLoading) return; // Don't init while auth is loading
+    
+    const initSession = async () => {
+      try {
+        const updatedStreak = updateStreak();
+        setStreak(updatedStreak);
+        const session = await wordpressClient.createSession();
+        setSessionReady(true);
+        
+        // Fetch usage
+        try {
+          const usageResponse = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/usage`, { credentials: 'include' });
+          if (usageResponse.ok) {
+            const usageData = await usageResponse.json();
+            if (usageData.success) setUsage(usageData.usage);
+          }
+        } catch (e) {}
+
+        // Fetch Better Self
+        await fetchBetterSelf();
+        
+        if (session.has_memories) {
+          const welcomeName = authUserName || 'back';
+          setMessages([{ id: 'welcome', role: 'assistant', content: `Good to have you ${welcomeName}! I remember our previous conversations. How can I help you today?`, timestamp: new Date() }]);
+          setShowWelcome(false);
+        }
+      } catch (err) {
+        setSessionReady(true);
+      }
+    };
+    
+    initSession();
+  }, [authLoading, authUserName, fetchBetterSelf]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => { 
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
+  }, [messages]);
+
+  // Keep voiceModeRef in sync
+  useEffect(() => { 
+    voiceModeRef.current = voiceMode; 
+  }, [voiceMode]);
+
+  // =========================================================================
+  // HANDLERS
+  // =========================================================================
+
+  const handleRecalibrate = async () => {
+    if (!confirm('Fresh start with the same goals?')) return;
+    try {
+      await wordpressClient.recalibrateBetterSelf();
+      await fetchBetterSelf();
+      setBetterSelfPanelOpen(false);
+    } catch (err) {
+      console.error('Recalibrate failed:', err);
+    }
   };
 
-  // Direct send without input (for programmatic sends)
   const sendTextMessageDirect = async (text: string) => {
     setIsLoading(true);
     setError(null);
@@ -915,7 +898,25 @@ function ChatComponent({ className = '' }: ChatProps) {
     }
   };
 
-  // Handle celebration close
+  const handleStartChallenge = () => {
+    setBetterSelfPanelOpen(false);
+    setShowWelcome(false);
+    const starterMessage = "I want to start a Better Self challenge! Help me set up my goals and create my future self to compete against.";
+    setInputText('');
+    
+    const userMessage: Message = { 
+      id: `user-${Date.now()}`, 
+      role: 'user', 
+      content: starterMessage, 
+      timestamp: new Date() 
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    setTimeout(() => {
+      sendTextMessageDirect(starterMessage);
+    }, 100);
+  };
+
   const handleCelebrationClose = () => {
     if (currentCelebrationIndex < celebrations.length - 1) {
       setCurrentCelebrationIndex(prev => prev + 1);
@@ -925,65 +926,12 @@ function ChatComponent({ className = '' }: ChatProps) {
     }
   };
 
-  // Animation state
   const getAnimationState = (): 'listening' | 'speaking' | 'loading' | 'idle' => {
     if (isListening || recorderState.isRecording) return 'listening';
     if (isSpeaking) return 'speaking';
     if (isLoading) return 'loading';
     return 'idle';
   };
-
-  // iOS audio unlock
-  const unlockAudioForIOS = () => {
-    if (audioUnlockedRef.current) return;
-    try {
-      const silentAudio = document.createElement('audio');
-      silentAudio.setAttribute('playsinline', 'true');
-      silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
-      silentAudio.volume = 0.01;
-      silentAudio.play().then(() => { silentAudio.pause(); audioUnlockedRef.current = true; }).catch(() => {});
-    } catch (e) {}
-  };
-
-  // Initialize - runs after auth is confirmed
-  useEffect(() => {
-    const initSession = async () => {
-      try {
-        const updatedStreak = updateStreak();
-        setStreak(updatedStreak);
-        const session = await wordpressClient.createSession();
-        setSessionReady(true);
-        
-        // Fetch usage
-        try {
-          const usageResponse = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/usage`, { credentials: 'include' });
-          if (usageResponse.ok) {
-            const usageData = await usageResponse.json();
-            if (usageData.success) setUsage(usageData.usage);
-          }
-        } catch (e) {}
-
-        // Fetch Better Self
-        await fetchBetterSelf();
-        
-        if (session.has_memories) {
-          const welcomeName = authUserName || 'back';
-          setMessages([{ id: 'welcome', role: 'assistant', content: `Good to have you ${welcomeName}! I remember our previous conversations. How can I help you today?`, timestamp: new Date() }]);
-          setShowWelcome(false);
-        }
-      } catch (err) {
-        setSessionReady(true);
-      }
-    };
-    
-    // Only init if auth is done
-    if (!authLoading) {
-      initSession();
-    }
-  }, [authLoading, authUserName]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-  useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
   const copyMessage = async (messageId: string, content: string) => {
     try {
@@ -1119,6 +1067,29 @@ function ChatComponent({ className = '' }: ChatProps) {
     return { background: 'linear-gradient(90deg, #16a34a 0%, #15803d 100%)' };
   };
 
+  // =========================================================================
+  // CONDITIONAL RENDERS (AFTER all hooks)
+  // =========================================================================
+
+  // Show loading while auth is checking
+  if (authLoading) {
+    return <AuthLoadingScreen />;
+  }
+
+  // Show error if auth failed
+  if (authError) {
+    return <AuthErrorScreen error={authError} loginUrl={loginUrl} />;
+  }
+
+  // Optional: Require authentication
+  // if (!isAuthenticated) {
+  //   return <LoginRequiredScreen loginUrl={loginUrl} />;
+  // }
+
+  // =========================================================================
+  // MAIN RENDER
+  // =========================================================================
+
   const animationState = getAnimationState();
 
   return (
@@ -1140,7 +1111,6 @@ function ChatComponent({ className = '' }: ChatProps) {
         </div>
         
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Combined Progress Badge (Streak + Better Self) */}
           <CombinedProgressBadge 
             streak={streak}
             gap={betterSelfGap} 
@@ -1149,21 +1119,18 @@ function ChatComponent({ className = '' }: ChatProps) {
             onClick={() => setBetterSelfPanelOpen(true)}
           />
           
-          {/* Clear Chat */}
           {messages.length > 0 && (
             <button onClick={clearChat} className="p-1.5 sm:p-2 rounded-full transition-all hover:scale-110" style={{ background: 'rgba(85, 0, 0, 0.6)', color: '#E8C4A0' }} title="Clear chat">
               <Trash2 size={16} />
             </button>
           )}
           
-          {/* Sound Toggle */}
           <button onClick={() => setAutoSpeak(!autoSpeak)} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs rounded-full transition-all font-medium" style={{ background: autoSpeak ? 'linear-gradient(135deg, #166534 0%, #15803d 100%)' : 'rgba(85, 0, 0, 0.6)', color: autoSpeak ? '#ffffff' : '#E8C4A0', boxShadow: autoSpeak ? '0 4px 15px rgba(22, 101, 52, 0.4)' : 'none' }}>
             {autoSpeak ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
         </div>
       </div>
 
-      {/* Better Self Panel */}
       <BetterSelfPanel 
         gap={betterSelfGap} 
         data={betterSelfData}
@@ -1174,7 +1141,6 @@ function ChatComponent({ className = '' }: ChatProps) {
         onStartChallenge={handleStartChallenge}
       />
 
-      {/* Celebration Modal */}
       {celebrations.length > 0 && (
         <CelebrationModal 
           celebration={celebrations[currentCelebrationIndex]} 
