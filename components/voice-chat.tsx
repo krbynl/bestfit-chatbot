@@ -48,7 +48,7 @@ interface GapMetric {
   projected: number;
   goal: number;
   diff: number;
-  status: 'ahead' | 'behind' | 'on_track';
+  status: string;  // ✅ Flexible
   unit: string;
 }
 
