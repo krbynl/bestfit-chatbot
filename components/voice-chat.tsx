@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X, Plus } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { wordpressClient } from '@/lib/wordpress-client';
+import { useAuth } from '@/hooks/useAuth';
 
 // =============================================================================
 // TYPES
@@ -60,6 +61,20 @@ interface GapData {
   better_self_name: string;
   why_statement: string;
   metrics: Record<string, GapMetric>;
+}
+
+// Chat component props (for compatibility with pages expecting Chat)
+interface ChatProps {
+  id?: string;
+  autoResume?: boolean;
+  initialChatModel?: string;
+  initialMessages?: any[];
+  initialVisibilityType?: string;
+  isReadonly?: boolean;
+  className?: string;
+  initialLastContext?: any;
+  key?: string;
+  [key: string]: any;
 }
 
 // =============================================================================
@@ -368,11 +383,7 @@ const BetterSelfPanel = ({
 
             {/* Content */}
             <div className="p-6 text-center">
-              <img 
-  src="https://bestfitcoach.com/wp-content/uploads/2025/10/best-fit-coach-icon-only.png" 
-  alt="Best Fit Coach" 
-  className="w-20 h-20 mx-auto mb-4 object-contain"
-/>
+              <div className="text-6xl mb-4">🚀</div>
               <h4 className="text-xl font-bold mb-2">Start Your Transformation</h4>
               <p className="text-white/70 text-sm mb-6">
                 Compete against your future self! Set goals, track progress, and become the person you want to be.
@@ -631,10 +642,94 @@ const TypingIndicator = () => {
 };
 
 // =============================================================================
+// AUTH LOADING SCREEN
+// =============================================================================
+
+const AuthLoadingScreen = () => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full" style={{ background: 'radial-gradient(ellipse at center, rgba(17, 17, 132, 0.15) 0%, transparent 50%), linear-gradient(160deg, #0d0d0d 0%, #1a1209 25%, #1c1410 50%, #12101a 75%, #0d0d0d 100%)' }}>
+      <FitnessLoadingAnimation state="loading" />
+      <p className="mt-6 text-sm" style={{ color: '#A89080' }}>Authenticating...</p>
+    </div>
+  );
+};
+
+// =============================================================================
+// LOGIN REQUIRED SCREEN
+// =============================================================================
+
+const LoginRequiredScreen = ({ loginUrl }: { loginUrl: string }) => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6" style={{ background: 'radial-gradient(ellipse at center, rgba(17, 17, 132, 0.15) 0%, transparent 50%), linear-gradient(160deg, #0d0d0d 0%, #1a1209 25%, #1c1410 50%, #12101a 75%, #0d0d0d 100%)' }}>
+      <div className="w-24 h-24 sm:w-32 sm:h-32 mb-6">
+        <FitnessLoadingAnimation state="idle" />
+      </div>
+      <h1 className="text-2xl font-bold mb-2" style={{ color: '#F5E6D3' }}>Welcome to Best Fit Coach</h1>
+      <p className="text-center mb-8 max-w-md" style={{ color: '#A89080' }}>
+        Your AI-powered fitness coach is ready to help you reach your goals. Please log in to start your journey.
+      </p>
+      <a 
+        href={loginUrl}
+        className="px-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 active:scale-95"
+        style={{
+          background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+          color: '#ffffff',
+          boxShadow: '0 6px 25px rgba(22, 163, 74, 0.5)',
+        }}
+      >
+        🔐 Log In to Continue
+      </a>
+      <p className="mt-6 text-xs" style={{ color: '#6b6b6b' }}>
+        Don't have an account? <a href="https://bestfitcoach.com/register" className="underline hover:text-white">Sign up here</a>
+      </p>
+    </div>
+  );
+};
+
+// =============================================================================
+// AUTH ERROR SCREEN
+// =============================================================================
+
+const AuthErrorScreen = ({ error, loginUrl }: { error: string; loginUrl: string }) => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6" style={{ background: 'radial-gradient(ellipse at center, rgba(220, 38, 38, 0.1) 0%, transparent 50%), linear-gradient(160deg, #0d0d0d 0%, #1a1209 25%, #1c1410 50%, #12101a 75%, #0d0d0d 100%)' }}>
+      <div className="text-6xl mb-6">⚠️</div>
+      <h1 className="text-xl font-bold mb-2" style={{ color: '#F5E6D3' }}>Authentication Error</h1>
+      <p className="text-center mb-8 max-w-md" style={{ color: '#ef4444' }}>
+        {error}
+      </p>
+      <a 
+        href={loginUrl}
+        className="px-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 active:scale-95"
+        style={{
+          background: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)',
+          color: '#ffffff',
+          boxShadow: '0 6px 25px rgba(190, 81, 3, 0.5)',
+        }}
+      >
+        🔄 Try Logging In Again
+      </a>
+    </div>
+  );
+};
+
+// =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
-export function VoiceChat({ className = '' }: { className?: string }) {
+function ChatComponent({ className = '' }: ChatProps) {
+  // =========================================================================
+  // AUTH HOOK - MUST BE FIRST
+  // =========================================================================
+  const { 
+    isAuthenticated, 
+    isLoading: authLoading, 
+    error: authError,
+    userId: authUserId, 
+    userName: authUserName,
+    loginUrl 
+  } = useAuth();
+
   // Existing state
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -665,22 +760,41 @@ export function VoiceChat({ className = '' }: { className?: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
 
+  // =========================================================================
+  // AUTH STATE SCREENS
+  // =========================================================================
+  
+  // Show loading while auth is checking
+  if (authLoading) {
+    return <AuthLoadingScreen />;
+  }
+
+  // Show error if auth failed
+  if (authError) {
+    return <AuthErrorScreen error={authError} loginUrl={loginUrl} />;
+  }
+
+  // Require authentication - uncomment to enforce login
+  // if (!isAuthenticated) {
+  //   return <LoginRequiredScreen loginUrl={loginUrl} />;
+  // }
+
+  // =========================================================================
+  // REST OF COMPONENT (only renders when auth is complete)
+  // =========================================================================
+
   // Fetch Better Self data
-  const fetchBetterSelf = useCallback(async () => {
+  const fetchBetterSelf = async () => {
     try {
       setBetterSelfLoading(true);
-      const visitorId = localStorage.getItem('vc_user_id') || '';
-const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
-      if (response.ok) {
-        const data = await response.json();
-        setBetterSelfHasChallenge(data.success && data.has_challenge);
-        if (data.success && data.has_challenge) {
-          setBetterSelfData(data.better_self);
-          setBetterSelfGap(data.gap);
-        } else {
-          setBetterSelfData(null);
-          setBetterSelfGap(null);
-        }
+      const response = await wordpressClient.getBetterSelf();
+      setBetterSelfHasChallenge(response.success && response.has_challenge);
+      if (response.success && response.has_challenge) {
+        setBetterSelfData(response.better_self || null);
+        setBetterSelfGap(response.gap || null);
+      } else {
+        setBetterSelfData(null);
+        setBetterSelfGap(null);
       }
     } catch (err) {
       console.log('Could not fetch Better Self data');
@@ -688,68 +802,52 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self?
     } finally {
       setBetterSelfLoading(false);
     }
-  }, []);
+  };
 
   // Check for celebrations
-  const checkCelebrations = useCallback(async () => {
+  const checkCelebrations = async () => {
     try {
-      const visitorId = localStorage.getItem('vc_user_id') || '';
-const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/celebrations?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.has_celebrations) {
-          setCelebrations(data.celebrations);
-        }
+      const response = await wordpressClient.checkCelebrations();
+      if (response.success && response.has_celebrations) {
+        setCelebrations(response.celebrations);
       }
     } catch (err) {
       console.log('Could not check celebrations');
     }
-  }, []);
+  };
 
   // Refresh gap after workout
-  const refreshBetterSelfGap = useCallback(async () => {
+  const refreshBetterSelfGap = async () => {
     try {
-     const visitorId = localStorage.getItem('vc_user_id') || '';
-const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/gap?user_id=${encodeURIComponent(visitorId)}`, { credentials: 'include' });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setBetterSelfGap(data.gap);
-        }
+      const response = await wordpressClient.getBetterSelfGap();
+      if (response.success) {
+        setBetterSelfGap(response.gap || null);
       }
       await checkCelebrations();
     } catch (err) {
       console.log('Could not refresh gap');
     }
-  }, [checkCelebrations]);
+  };
 
   // Recalibrate Better Self
-  const handleRecalibrate = useCallback(async () => {
+  const handleRecalibrate = async () => {
     if (!confirm('Fresh start with the same goals?')) return;
     try {
-      const visitorId = localStorage.getItem('vc_user_id') || '';
-const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/recalibrate?user_id=${encodeURIComponent(visitorId)}`, {
-  method: 'POST',
-  credentials: 'include',
-});
-      if (response.ok) {
-        await fetchBetterSelf();
-        setBetterSelfPanelOpen(false);
-      }
+      await wordpressClient.recalibrateBetterSelf();
+      await fetchBetterSelf();
+      setBetterSelfPanelOpen(false);
     } catch (err) {
       console.error('Recalibrate failed:', err);
     }
-  }, [fetchBetterSelf]);
+  };
 
   // Start Challenge - sends message to coach
-  const handleStartChallenge = useCallback(() => {
+  const handleStartChallenge = () => {
     setBetterSelfPanelOpen(false);
     setShowWelcome(false);
-    // Send a message to coach to start the challenge flow
     const starterMessage = "I want to start a Better Self challenge! Help me set up my goals and create my future self to compete against.";
     setInputText('');
     
-    // Add user message
     const userMessage: Message = { 
       id: `user-${Date.now()}`, 
       role: 'user', 
@@ -758,14 +856,34 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
     };
     setMessages(prev => [...prev, userMessage]);
     
-    // Trigger the actual send
     setTimeout(() => {
       sendTextMessageDirect(starterMessage);
     }, 100);
-  }, []);
+  };
+
+  // Play audio helper
+  const playAudio = async (base64Audio: string): Promise<void> => {
+    return new Promise((resolve) => {
+      setIsSpeaking(true);
+      try {
+        const binaryString = atob(base64Audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = document.createElement('audio');
+        audio.setAttribute('playsinline', 'true');
+        audio.src = url;
+        audioRef.current = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
+        audio.play().catch(() => { setIsSpeaking(false); resolve(); });
+      } catch (error) { setIsSpeaking(false); resolve(); }
+    });
+  };
 
   // Direct send without input (for programmatic sends)
-  const sendTextMessageDirect = useCallback(async (text: string) => {
+  const sendTextMessageDirect = async (text: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -780,7 +898,6 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
         await refreshBetterSelfGap();
       }
 
-      // Re-fetch better self in case challenge was created
       await fetchBetterSelf();
 
       if (autoSpeak && response.ai_response) {
@@ -796,17 +913,17 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
     } finally {
       setIsLoading(false);
     }
-  }, [autoSpeak, usage, refreshBetterSelfGap, fetchBetterSelf]);
+  };
 
   // Handle celebration close
-  const handleCelebrationClose = useCallback(() => {
+  const handleCelebrationClose = () => {
     if (currentCelebrationIndex < celebrations.length - 1) {
       setCurrentCelebrationIndex(prev => prev + 1);
     } else {
       setCelebrations([]);
       setCurrentCelebrationIndex(0);
     }
-  }, [currentCelebrationIndex, celebrations.length]);
+  };
 
   // Animation state
   const getAnimationState = (): 'listening' | 'speaking' | 'loading' | 'idle' => {
@@ -817,7 +934,7 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
   };
 
   // iOS audio unlock
-  const unlockAudioForIOS = useCallback(() => {
+  const unlockAudioForIOS = () => {
     if (audioUnlockedRef.current) return;
     try {
       const silentAudio = document.createElement('audio');
@@ -826,9 +943,9 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
       silentAudio.volume = 0.01;
       silentAudio.play().then(() => { silentAudio.pause(); audioUnlockedRef.current = true; }).catch(() => {});
     } catch (e) {}
-  }, []);
+  };
 
-  // Initialize
+  // Initialize - runs after auth is confirmed
   useEffect(() => {
     const initSession = async () => {
       try {
@@ -850,66 +967,51 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
         await fetchBetterSelf();
         
         if (session.has_memories) {
-          setMessages([{ id: 'welcome', role: 'assistant', content: `Good to have you back! I remember our previous conversations. How can I help you today?`, timestamp: new Date() }]);
+          const welcomeName = authUserName || 'back';
+          setMessages([{ id: 'welcome', role: 'assistant', content: `Good to have you ${welcomeName}! I remember our previous conversations. How can I help you today?`, timestamp: new Date() }]);
           setShowWelcome(false);
         }
       } catch (err) {
         setSessionReady(true);
       }
     };
-    initSession();
-  }, [fetchBetterSelf]);
+    
+    // Only init if auth is done
+    if (!authLoading) {
+      initSession();
+    }
+  }, [authLoading, authUserName]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { voiceModeRef.current = voiceMode; }, [voiceMode]);
 
-  const copyMessage = useCallback(async (messageId: string, content: string) => {
+  const copyMessage = async (messageId: string, content: string) => {
     try {
       await navigator.clipboard.writeText(content);
       setCopiedId(messageId);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {}
-  }, []);
+  };
 
-  const stopAllAudio = useCallback(() => {
+  const stopAllAudio = () => {
     document.querySelectorAll('audio').forEach(audio => { audio.pause(); audio.currentTime = 0; });
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
     setIsSpeaking(false);
-  }, []);
+  };
 
-  const clearChat = useCallback(() => {
+  const clearChat = () => {
     setMessages([]);
     setShowWelcome(true);
     setError(null);
-  }, []);
+  };
 
-  const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setIsSpeaking(true);
-      try {
-        const binaryString = atob(base64Audio);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-        const blob = new Blob([bytes], { type: 'audio/mpeg' });
-        const url = URL.createObjectURL(blob);
-        const audio = document.createElement('audio');
-        audio.setAttribute('playsinline', 'true');
-        audio.src = url;
-        audioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.play().catch(() => { setIsSpeaking(false); resolve(); });
-      } catch (error) { setIsSpeaking(false); resolve(); }
-    });
-  }, []);
-
-  const startListening = useCallback(async () => {
+  const startListening = async () => {
     if (!voiceModeRef.current) return;
     setIsListening(true);
     try { await startRecording(); } catch (err) { setError('Microphone access denied'); setVoiceMode(false); setIsListening(false); }
-  }, [startRecording]);
+  };
 
-  const processVoiceAndContinue = useCallback(async () => {
+  const processVoiceAndContinue = async () => {
     if (!recorderState.isRecording) return;
     setIsListening(false);
     setIsLoading(true);
@@ -936,7 +1038,6 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
         await refreshBetterSelfGap();
       }
 
-      // Re-fetch better self in case challenge was created via voice
       await fetchBetterSelf();
 
       if (response.audio && autoSpeak && voiceModeRef.current) await playAudio(response.audio);
@@ -947,9 +1048,9 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
       setIsLoading(false);
       if (voiceModeRef.current) setTimeout(() => startListening(), 1000);
     }
-  }, [recorderState.isRecording, stopRecording, autoSpeak, playAudio, startListening, usage, refreshBetterSelfGap, fetchBetterSelf]);
+  };
 
-  const toggleVoiceMode = useCallback(async () => {
+  const toggleVoiceMode = async () => {
     unlockAudioForIOS();
     if (voiceMode) {
       setVoiceMode(false);
@@ -963,13 +1064,13 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
       setShowWelcome(false);
       await startListening();
     }
-  }, [voiceMode, recorderState.isRecording, cancelRecording, startListening, stopAllAudio, unlockAudioForIOS]);
+  };
 
-  const handleVoiceTap = useCallback(async () => {
+  const handleVoiceTap = async () => {
     if (recorderState.isRecording) await processVoiceAndContinue();
-  }, [recorderState.isRecording, processVoiceAndContinue]);
+  };
 
-  const sendTextMessage = useCallback(async (text: string) => {
+  const sendTextMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
     unlockAudioForIOS();
     setShowWelcome(false);
@@ -991,7 +1092,6 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
         await refreshBetterSelfGap();
       }
 
-      // Re-fetch better self in case challenge was created
       await fetchBetterSelf();
 
       if (autoSpeak && response.ai_response) {
@@ -1007,7 +1107,7 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, autoSpeak, playAudio, usage, unlockAudioForIOS, refreshBetterSelfGap, fetchBetterSelf]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); sendTextMessage(inputText); };
   const handleStarterSelect = (text: string) => { sendTextMessage(text); };
@@ -1111,7 +1211,9 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
             <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-3 sm:mb-4">
               <FitnessLoadingAnimation state="idle" />
             </div>
-            <p className="text-lg sm:text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>Hey there! I'm Coach BFC</p>
+            <p className="text-lg sm:text-xl mb-1 font-semibold" style={{ color: '#F5E6D3' }}>
+              {authUserName ? `Hey ${authUserName}! I'm Coach BFC` : "Hey there! I'm Coach BFC"}
+            </p>
             <p className="text-sm sm:text-base mb-4 sm:mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
             <DailyTip />
             <ConversationStarters onSelect={handleStarterSelect} />
@@ -1165,4 +1267,16 @@ const response = await fetch(`${API_BASE_URL}/wp-json/voice-chat/v1/better-self/
   );
 }
 
-export default VoiceChat;
+// =============================================================================
+// EXPORTS
+// =============================================================================
+
+export function Chat(props: ChatProps) {
+  return <ChatComponent {...props} />;
+}
+
+export function VoiceChat(props: ChatProps) {
+  return <ChatComponent {...props} />;
+}
+
+export default Chat;
