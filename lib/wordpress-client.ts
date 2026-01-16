@@ -4,133 +4,8 @@
  * 
  * File: lib/wordpress-client.ts
  * 
- * UPDATED: Now integrates with BFC Token Auth system
- * - Uses authenticated user_id from localStorage
- * - Falls back to guest ID if not authenticated
+ * CLEANED VERSION - Token auth removed, guest ID persistence fixed
  */
-
-// =============================================================================
-// AUTH INTEGRATION
-// =============================================================================
-
-const AUTH_STORAGE_KEY = 'bfc_auth';
-
-interface BFCAuthData {
-  user_id: string;
-  wp_user_id: number;
-  name: string;
-  email: string;
-  subscription_status: string;
-  authenticated_at: string;
-}
-
-/**
- * Get stored auth data from localStorage
- */
-function getStoredAuth(): BFCAuthData | null {
-  if (typeof window === 'undefined') return null;
-  
-  try {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored) as BFCAuthData;
-  } catch (e) {
-    console.error('Error reading auth data:', e);
-    return null;
-  }
-}
-
-/**
- * Store auth data in localStorage
- */
-function storeAuth(data: BFCAuthData): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-    console.log('BFC Auth: Stored auth for user', data.user_id);
-  } catch (e) {
-    console.error('Error storing auth data:', e);
-  }
-}
-
-/**
- * Clear auth data (logout)
- */
-export function clearAuth(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  localStorage.removeItem('vc_user_id'); // Also clear legacy storage
-  console.log('BFC Auth: Cleared auth data');
-}
-
-/**
- * Check if user is authenticated
- */
-export function isAuthenticated(): boolean {
-  const auth = getStoredAuth();
-  return auth !== null && auth.user_id !== undefined;
-}
-
-/**
- * Get authenticated user's name
- */
-export function getAuthenticatedUserName(): string | null {
-  const auth = getStoredAuth();
-  return auth?.name || null;
-}
-
-/**
- * Get authenticated user's ID
- */
-export function getAuthenticatedUserId(): string | null {
-  const auth = getStoredAuth();
-  return auth?.user_id || null;
-}
-
-/**
- * Validate an auth token with WordPress
- */
-export async function validateAuthToken(token: string, baseUrl: string): Promise<BFCAuthData | null> {
-  try {
-    console.log('BFC Auth: Validating token...');
-    
-    const response = await fetch(`${baseUrl}/wp-json/voice-chat/v1/auth/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('BFC Auth: Token validation failed:', error);
-      return null;
-    }
-    
-    const data = await response.json();
-    
-    if (data.success && data.user_id) {
-      console.log('BFC Auth: Token validated for user', data.user_id);
-      // Store the auth data
-      storeAuth(data as BFCAuthData);
-      return data as BFCAuthData;
-    }
-    
-    return null;
-  } catch (e) {
-    console.error('BFC Auth: Error validating token:', e);
-    return null;
-  }
-}
-
-/**
- * Get WordPress login URL
- */
-export function getLoginUrl(baseUrl: string): string {
-  return `${baseUrl}/login/?redirect_to_chat=1`;
-}
 
 // =============================================================================
 // INTERFACES
@@ -230,30 +105,27 @@ export interface BetterSelfResponse {
 
 class WordPressVoiceClient {
   private baseUrl: string;
-  private legacyUserId: string | null = null;
+  private userId: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
   /**
-   * Get user ID - prioritizes authenticated user, falls back to legacy/guest
+   * Get user ID - with persistence
+   * CRITICAL FIX: Always returns same ID once set
    */
   getUserId(): string | null {
-    // Priority 1: Authenticated user
-    const authUserId = getAuthenticatedUserId();
-    if (authUserId) {
-      return authUserId;
+    // Priority 1: Check memory
+    if (this.userId) {
+      return this.userId;
     }
     
-    // Priority 2: Legacy stored ID
-    if (this.legacyUserId) return this.legacyUserId;
-    
-    // Priority 3: Check legacy localStorage
+    // Priority 2: Check localStorage
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('vc_user_id');
       if (stored) {
-        this.legacyUserId = stored;
+        this.userId = stored;
         return stored;
       }
     }
@@ -262,86 +134,54 @@ class WordPressVoiceClient {
   }
 
   /**
-   * Set user ID (for legacy/guest mode)
+   * Set user ID - with persistence
    */
-  setUserId(id: string): void {
-    this.legacyUserId = id;
+  private setUserId(id: string): void {
+    this.userId = id;
     if (typeof window !== 'undefined') {
       localStorage.setItem('vc_user_id', id);
+      console.log('BFC: Stored user_id:', id);
     }
   }
 
   /**
-   * Check if current user is authenticated (not guest)
-   */
-  isUserAuthenticated(): boolean {
-    return isAuthenticated();
-  }
-
-  /**
-   * Get authenticated user's display name
-   */
-  getUserName(): string | null {
-    return getAuthenticatedUserName();
-  }
-
-  /**
-   * Get login URL for unauthenticated users
-   */
-  getLoginUrl(): string {
-    return getLoginUrl(this.baseUrl);
-  }
-
-  /**
-   * Validate auth token (called when ?auth_token= is in URL)
-   */
-  async validateToken(token: string): Promise<BFCAuthData | null> {
-    return validateAuthToken(token, this.baseUrl);
-  }
-
-  /**
-   * Logout - clear all auth data
-   */
-  logout(): void {
-    clearAuth();
-    this.legacyUserId = null;
-  }
-
-  /**
    * Create a voice chat session with memory context
+   * CRITICAL FIX: Only creates NEW user_id if none exists
    */
- async createSession(query: string = 'Hello'): Promise<VoiceSession> {
-  // CRITICAL FIX: Get existing user_id from localStorage FIRST
-  let userId = this.getUserId();
-  
-  // If no user_id exists yet, let WordPress generate one
-  // But if we already have one, FORCE WordPress to use it
-  const response = await fetch(`${this.baseUrl}/wp-json/voice-chat/v1/session`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query,
-      user_id: userId, // Send existing ID or null
-    }),
-    credentials: 'include',
-  });
+  async createSession(query: string = 'Hello'): Promise<VoiceSession> {
+    // CRITICAL: Get existing user_id FIRST
+    let userId = this.getUserId();
+    
+    console.log('BFC: Creating session with user_id:', userId || 'new user');
+    
+    const response = await fetch(`${this.baseUrl}/wp-json/voice-chat/v1/session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query,
+        user_id: userId, // Send existing ID or null
+      }),
+      credentials: 'include',
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to create session: ${response.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to create session: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // CRITICAL FIX: Only store NEW user_id if we didn't have one before
+    if (!userId && data.session?.user_id) {
+      console.log('BFC: New user created:', data.session.user_id);
+      this.setUserId(data.session.user_id);
+    } else if (userId) {
+      console.log('BFC: Using existing user_id:', userId);
+    }
+
+    return data.session;
   }
-
-  const data = await response.json();
-  
-  // CRITICAL FIX: Only store NEW user_id if we didn't have one before
-  if (!userId && data.session?.user_id && !isAuthenticated()) {
-    this.setUserId(data.session.user_id);
-  }
-  // If we already had a user_id, keep using it (don't overwrite)
-
-  return data.session;
-}
 
   /**
    * Send voice message (audio file) - Full pipeline
@@ -392,14 +232,7 @@ class WordPressVoiceClient {
       throw new Error(`Text message failed: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    
-    // Only set legacy ID if not authenticated
-    if (data.user_id && !isAuthenticated()) {
-      this.setUserId(data.user_id);
-    }
-
-    return data;
+    return response.json();
   }
 
   /**
