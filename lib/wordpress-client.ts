@@ -310,34 +310,38 @@ class WordPressVoiceClient {
   /**
    * Create a voice chat session with memory context
    */
-  async createSession(query: string = 'Hello'): Promise<VoiceSession> {
-    const userId = this.getUserId();
-    
-    const response = await fetch(`${this.baseUrl}/wp-json/voice-chat/v1/session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        user_id: userId,
-      }),
-      credentials: 'include',
-    });
+ async createSession(query: string = 'Hello'): Promise<VoiceSession> {
+  // CRITICAL FIX: Get existing user_id from localStorage FIRST
+  let userId = this.getUserId();
+  
+  // If no user_id exists yet, let WordPress generate one
+  // But if we already have one, FORCE WordPress to use it
+  const response = await fetch(`${this.baseUrl}/wp-json/voice-chat/v1/session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      user_id: userId, // Send existing ID or null
+    }),
+    credentials: 'include',
+  });
 
-    if (!response.ok) {
-      throw new Error(`Failed to create session: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    // Only set legacy ID if not authenticated
-    if (data.session?.user_id && !isAuthenticated()) {
-      this.setUserId(data.session.user_id);
-    }
-
-    return data.session;
+  if (!response.ok) {
+    throw new Error(`Failed to create session: ${response.statusText}`);
   }
+
+  const data = await response.json();
+  
+  // CRITICAL FIX: Only store NEW user_id if we didn't have one before
+  if (!userId && data.session?.user_id && !isAuthenticated()) {
+    this.setUserId(data.session.user_id);
+  }
+  // If we already had a user_id, keep using it (don't overwrite)
+
+  return data.session;
+}
 
   /**
    * Send voice message (audio file) - Full pipeline
