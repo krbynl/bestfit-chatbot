@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X, Plus } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { wordpressClient } from '@/lib/wordpress-client';
+import { useAuth } from '@/hooks/useAuth';
 
 // =============================================================================
 // TYPES
