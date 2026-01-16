@@ -1,0 +1,36 @@
+{
+  "name": "Best Fit Coach",
+  "short_name": "BFC",
+  "description": "Your AI-powered fitness coach",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#BE5103",
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+---
+
+### Issue 2: No Better Self Challenge Yet
+```
+❌ No challenge found
+```
+
+**This is expected!** You haven't created a challenge yet for this new user.
+
+---
+
+## 🎯 NOW CREATE YOUR BETTER SELF CHALLENGE
+
+### Option A: Through Chat (Natural Way)
+
+Just chat with Coach BFC:
+```
+I want to start a Better Self challenge! My goal is to lose 15 pounds in 12 weeks.
