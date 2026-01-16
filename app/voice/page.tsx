@@ -1,9 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
 import { VoiceChat } from '@/components/voice-chat';
-
-'use client';
 
 export default function VoiceChatPage() {
   // Service Worker removed - not needed yet
