@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, MicOff, Send, Volume2, VolumeX, Phone, PhoneOff, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X, Plus } from 'lucide-react';
+import { Mic, Send, Volume2, VolumeX, Copy, Check, Trash2, Lightbulb, Target, Dumbbell, Heart, Flame, Award, ChevronDown, X, Plus, Loader2, MessageSquare } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { wordpressClient } from '@/lib/wordpress-client';
 import { useAuth } from '@/hooks/useAuth';
@@ -77,11 +77,47 @@ interface ChatProps {
   [key: string]: any;
 }
 
+// Voice State Type
+type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_WORDPRESS_URL || 'https://bestfitcoach.com';
+const SILENCE_TIMEOUT_MS = 2500; // Auto-stop after 2.5 seconds of silence
+
+// Voice Button Configuration
+const VOICE_STATE_CONFIG = {
+  idle: {
+    color: '#14B8A6', // Teal
+    bgGradient: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)',
+    shadowColor: 'rgba(20, 184, 166, 0.5)',
+    label: 'Tap to talk',
+    hint: 'Tap the button and start speaking',
+  },
+  listening: {
+    color: '#EF4444', // Red
+    bgGradient: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+    shadowColor: 'rgba(239, 68, 68, 0.5)',
+    label: 'Listening...',
+    hint: 'Speak naturally. Will auto-stop when you pause.',
+  },
+  processing: {
+    color: '#F59E0B', // Amber
+    bgGradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    shadowColor: 'rgba(245, 158, 11, 0.5)',
+    label: 'Processing...',
+    hint: 'Understanding what you said...',
+  },
+  speaking: {
+    color: '#3B82F6', // Blue
+    bgGradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+    shadowColor: 'rgba(59, 130, 246, 0.5)',
+    label: 'Coach is speaking...',
+    hint: 'Listen to your coach',
+  },
+};
 
 // Daily Fitness Tips
 const DAILY_TIPS = [
@@ -178,30 +214,185 @@ const getStatusText = (status: string, name = 'Better Self') => {
 };
 
 // =============================================================================
-// ANIMATION COMPONENTS
+// VOICE UI COMPONENTS - SIMPLIFIED ONE-BUTTON DESIGN
 // =============================================================================
 
-const PulseRingAnimation = ({ isActive, color = '#BE5103' }: { isActive: boolean; color?: string }) => {
+// Pulse Rings Animation (for listening state)
+const PulseRings = ({ color, isActive }: { color: string; isActive: boolean }) => {
   if (!isActive) return null;
+  
   return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <>
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="absolute rounded-full border-2 animate-ping"
+          className="absolute rounded-full"
           style={{
-            width: `${80 + i * 40}px`,
-            height: `${80 + i * 40}px`,
-            borderColor: color,
-            opacity: 0.3 - i * 0.1,
-            animationDelay: `${i * 0.3}s`,
-            animationDuration: '1.5s',
+            top: '50%',
+            left: '50%',
+            width: '100%',
+            height: '100%',
+            transform: 'translate(-50%, -50%)',
+            border: `2px solid ${color}`,
+            animation: `pulse-ring 2s ease-out infinite`,
+            animationDelay: `${i * 0.4}s`,
+            opacity: 0,
           }}
         />
       ))}
+      <style jsx>{`
+        @keyframes pulse-ring {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+          100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+        }
+      `}</style>
+    </>
+  );
+};
+
+// Audio Waveform Animation
+const AudioWaveform = ({ isActive, color }: { isActive: boolean; color: string }) => {
+  if (!isActive) return null;
+  
+  return (
+    <div className="flex items-center justify-center gap-1 h-8 mt-3">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="w-1 rounded-full"
+          style={{
+            backgroundColor: color,
+            height: '8px',
+            animation: `wave 0.5s ease-in-out infinite`,
+            animationDelay: `${i * 0.1}s`,
+          }}
+        />
+      ))}
+      <style jsx>{`
+        @keyframes wave {
+          0%, 100% { height: 8px; }
+          50% { height: 28px; }
+        }
+      `}</style>
     </div>
   );
 };
+
+// Simple Voice Button Component
+const SimpleVoiceButton = ({ 
+  voiceState, 
+  onTap, 
+  disabled = false,
+  audioLevel = 0,
+}: { 
+  voiceState: VoiceState;
+  onTap: () => void;
+  disabled?: boolean;
+  audioLevel?: number;
+}) => {
+  const config = VOICE_STATE_CONFIG[voiceState];
+  
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {/* Main button container */}
+      <div className="relative">
+        {/* Pulse rings for listening state */}
+        <PulseRings color={config.color} isActive={voiceState === 'listening'} />
+        
+        {/* Main button */}
+        <button
+          onClick={onTap}
+          disabled={disabled || voiceState === 'processing'}
+          className="relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            background: config.bgGradient,
+            boxShadow: `0 8px 32px ${config.shadowColor}, 0 0 0 4px rgba(255,255,255,0.1)`,
+          }}
+          aria-label={config.label}
+        >
+          {/* Icon based on state */}
+          {voiceState === 'processing' ? (
+            <Loader2 size={40} className="text-white animate-spin" />
+          ) : voiceState === 'speaking' ? (
+            <Volume2 size={40} className="text-white" />
+          ) : (
+            <Mic size={40} className="text-white" />
+          )}
+          
+          {/* Audio level indicator ring when listening */}
+          {voiceState === 'listening' && (
+            <div
+              className="absolute inset-0 rounded-full border-4 border-white/30 transition-all duration-100"
+              style={{
+                transform: `scale(${1 + audioLevel * 0.3})`,
+                opacity: 0.5 + audioLevel * 0.5,
+              }}
+            />
+          )}
+        </button>
+      </div>
+      
+      {/* State label */}
+      <p
+        className="text-base font-semibold transition-colors duration-300"
+        style={{ color: config.color }}
+      >
+        {config.label}
+      </p>
+      
+      {/* Waveform visualization */}
+      <AudioWaveform 
+        isActive={voiceState === 'listening' || voiceState === 'speaking'} 
+        color={config.color} 
+      />
+      
+      {/* Hint text */}
+      <p className="text-xs text-gray-400 text-center max-w-xs">
+        {config.hint}
+      </p>
+    </div>
+  );
+};
+
+// Mode Toggle (Text vs Voice)
+const ModeToggle = ({ 
+  mode, 
+  onModeChange 
+}: { 
+  mode: 'text' | 'voice';
+  onModeChange: (mode: 'text' | 'voice') => void;
+}) => {
+  return (
+    <div className="flex items-center justify-center gap-2 p-1 rounded-full" style={{ background: 'rgba(0,0,0,0.3)' }}>
+      <button
+        onClick={() => onModeChange('text')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+          mode === 'text' 
+            ? 'bg-white/20 text-white' 
+            : 'text-white/60 hover:text-white/80'
+        }`}
+      >
+        <MessageSquare size={16} />
+        <span>Text</span>
+      </button>
+      <button
+        onClick={() => onModeChange('voice')}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+          mode === 'voice' 
+            ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' 
+            : 'text-white/60 hover:text-white/80'
+        }`}
+      >
+        <Mic size={16} />
+        <span>Voice</span>
+      </button>
+    </div>
+  );
+};
+
+// =============================================================================
+// OTHER UI COMPONENTS
+// =============================================================================
 
 const HeartbeatLine = ({ isActive }: { isActive: boolean }) => {
   if (!isActive) return null;
@@ -254,19 +445,6 @@ const FitnessLoadingAnimation = ({ state, size = 'normal' }: { state: 'listening
       <div className={`relative rounded-full flex items-center justify-center overflow-hidden ${isAnimating ? 'animate-pulse' : ''}`} style={{ width: `${dimensions.logo * 4}px`, height: `${dimensions.logo * 4}px`, background: `linear-gradient(135deg, ${colors.primary}40, ${colors.secondary}40)`, boxShadow: `0 0 20px ${colors.glow}` }}>
         <img src="/images/icon-192.png" alt="BFC" className="object-contain" style={{ width: `${dimensions.logo * 2.5}px`, height: `${dimensions.logo * 2.5}px` }} />
       </div>
-      <PulseRingAnimation isActive={isAnimating} color={colors.primary} />
-    </div>
-  );
-};
-
-const SoundWaveAnimation = ({ isActive }: { isActive: boolean }) => {
-  if (!isActive) return null;
-  return (
-    <div className="flex items-center justify-center gap-1 h-6 sm:h-8">
-      {[...Array(7)].map((_, i) => (
-        <div key={i} className="w-1 bg-gradient-to-t from-blue-900 to-blue-600 rounded-full" style={{ height: '100%', animation: `soundWave 0.5s ease-in-out infinite alternate`, animationDelay: `${i * 0.1}s` }} />
-      ))}
-      <style jsx>{`@keyframes soundWave { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }`}</style>
     </div>
   );
 };
@@ -702,8 +880,11 @@ function ChatComponent({ className = '' }: ChatProps) {
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [streak, setStreak] = useState<UserStreak>({ currentStreak: 0, lastVisit: '', totalVisits: 0 });
   const [showWelcome, setShowWelcome] = useState(true);
-  const [voiceMode, setVoiceMode] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  
+  // NEW: Simplified voice state management
+  const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [audioLevel, setAudioLevel] = useState(0);
 
   // Better Self state
   const [betterSelfData, setBetterSelfData] = useState<BetterSelfData | null>(null);
@@ -715,16 +896,22 @@ function ChatComponent({ className = '' }: ChatProps) {
   const [currentCelebrationIndex, setCurrentCelebrationIndex] = useState(0);
 
   // Refs
-  const voiceModeRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUnlockedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   
-  // Voice recorder hook
-  const { state: recorderState, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
+  // Voice recorder hook (keeping for compatibility, but we'll manage state ourselves)
+  const { state: recorderState, startRecording: hookStartRecording, stopRecording: hookStopRecording, cancelRecording } = useVoiceRecorder();
 
   // =========================================================================
-  // CALLBACKS (defined before useEffect that uses them)
+  // CALLBACKS
   // =========================================================================
   
   const fetchBetterSelf = useCallback(async () => {
@@ -773,6 +960,7 @@ function ChatComponent({ className = '' }: ChatProps) {
   const playAudio = useCallback(async (base64Audio: string): Promise<void> => {
     return new Promise((resolve) => {
       setIsSpeaking(true);
+      setVoiceState('speaking');
       try {
         const binaryString = atob(base64Audio);
         const bytes = new Uint8Array(binaryString.length);
@@ -783,10 +971,28 @@ function ChatComponent({ className = '' }: ChatProps) {
         audio.setAttribute('playsinline', 'true');
         audio.src = url;
         audioRef.current = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); setIsSpeaking(false); resolve(); };
-        audio.play().catch(() => { setIsSpeaking(false); resolve(); });
-      } catch (error) { setIsSpeaking(false); resolve(); }
+        audio.onended = () => { 
+          URL.revokeObjectURL(url); 
+          setIsSpeaking(false); 
+          setVoiceState('idle');
+          resolve(); 
+        };
+        audio.onerror = () => { 
+          URL.revokeObjectURL(url); 
+          setIsSpeaking(false); 
+          setVoiceState('idle');
+          resolve(); 
+        };
+        audio.play().catch(() => { 
+          setIsSpeaking(false); 
+          setVoiceState('idle');
+          resolve(); 
+        });
+      } catch (error) { 
+        setIsSpeaking(false); 
+        setVoiceState('idle');
+        resolve(); 
+      }
     });
   }, []);
 
@@ -802,12 +1008,251 @@ function ChatComponent({ className = '' }: ChatProps) {
   }, []);
 
   // =========================================================================
+  // VOICE RECORDING WITH SILENCE DETECTION
+  // =========================================================================
+
+  const cleanupVoice = useCallback(() => {
+    // Stop media recorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    
+    // Stop all tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    // Clear timers
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    
+    // Cancel animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    // Close audio context
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    audioChunksRef.current = [];
+    setAudioLevel(0);
+  }, []);
+
+  const resetSilenceTimer = useCallback(() => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+    }
+    silenceTimerRef.current = setTimeout(() => {
+      // Auto-stop after silence
+      if (voiceState === 'listening') {
+        processVoiceRecording();
+      }
+    }, SILENCE_TIMEOUT_MS);
+  }, [voiceState]);
+
+  const monitorAudioLevel = useCallback(() => {
+    if (!analyserRef.current) return;
+    
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    
+    const checkLevel = () => {
+      if (!analyserRef.current || voiceState !== 'listening') return;
+      
+      analyserRef.current.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+      const normalizedLevel = average / 255;
+      
+      setAudioLevel(normalizedLevel);
+      
+      // Reset silence timer if sound detected
+      if (normalizedLevel > 0.01) {
+        resetSilenceTimer();
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(checkLevel);
+    };
+    
+    checkLevel();
+  }, [voiceState, resetSilenceTimer]);
+
+  const startVoiceRecording = useCallback(async () => {
+    try {
+      setError(null);
+      unlockAudioForIOS();
+      
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        },
+      });
+      
+      streamRef.current = stream;
+      
+      // Set up audio analyser for level monitoring
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+      
+      // Determine supported MIME type
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/mp4';
+      
+      // Set up media recorder
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      // Start recording
+      mediaRecorder.start(100);
+      setVoiceState('listening');
+      setShowWelcome(false);
+      
+      // Start monitoring audio levels
+      monitorAudioLevel();
+      
+      // Start silence detection timer
+      resetSilenceTimer();
+      
+    } catch (err) {
+      console.error('Recording error:', err);
+      setError('Could not access microphone. Please check permissions.');
+      setVoiceState('idle');
+    }
+  }, [unlockAudioForIOS, monitorAudioLevel, resetSilenceTimer]);
+
+  const processVoiceRecording = useCallback(async () => {
+    if (voiceState !== 'listening') return;
+    
+    // Stop the recorder first
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      setVoiceState('processing');
+      
+      // Create a promise that resolves when recording stops
+      const audioBlob = await new Promise<Blob | null>((resolve) => {
+        if (!mediaRecorderRef.current) {
+          resolve(null);
+          return;
+        }
+        
+        mediaRecorderRef.current.onstop = () => {
+          if (audioChunksRef.current.length > 0) {
+            const blob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current?.mimeType || 'audio/webm' });
+            resolve(blob);
+          } else {
+            resolve(null);
+          }
+        };
+        
+        mediaRecorderRef.current.stop();
+      });
+      
+      cleanupVoice();
+      
+      if (!audioBlob) {
+        setError('No audio recorded. Please try again.');
+        setVoiceState('idle');
+        return;
+      }
+      
+      // Process the voice message
+      setIsLoading(true);
+      
+      try {
+        const tempId = `user-${Date.now()}`;
+        setMessages(prev => [...prev, { id: tempId, role: 'user', content: '🎤 Processing...', timestamp: new Date() }]);
+
+        const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
+        if (!response.success) throw new Error(response.error || 'Failed to process voice');
+
+        setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: response.user_message || '(Voice message)' } : msg));
+        setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.ai_response || '', timestamp: new Date() }]);
+
+        if (usage) setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
+
+        if (response.workouts_logged && response.workouts_logged > 0) {
+          await refreshBetterSelfGap();
+        }
+
+        await fetchBetterSelf();
+
+        // Play audio response
+        if (response.audio && autoSpeak) {
+          await playAudio(response.audio);
+        }
+        
+        setVoiceState('idle');
+        
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Voice processing failed');
+        setMessages(prev => prev.filter(msg => !msg.content.includes('Processing')));
+        setVoiceState('idle');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [voiceState, cleanupVoice, usage, refreshBetterSelfGap, fetchBetterSelf, autoSpeak, playAudio]);
+
+  // =========================================================================
+  // VOICE BUTTON TAP HANDLER
+  // =========================================================================
+
+  const handleVoiceButtonTap = useCallback(() => {
+    switch (voiceState) {
+      case 'idle':
+        startVoiceRecording();
+        break;
+      case 'listening':
+        // Manual stop - process immediately
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+        }
+        processVoiceRecording();
+        break;
+      case 'speaking':
+        // Stop audio playback
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+        setIsSpeaking(false);
+        setVoiceState('idle');
+        break;
+      case 'processing':
+        // Do nothing while processing
+        break;
+    }
+  }, [voiceState, startVoiceRecording, processVoiceRecording]);
+
+  // =========================================================================
   // EFFECTS
   // =========================================================================
 
   // Initialize session when auth is ready
   useEffect(() => {
-    if (authLoading) return; // Don't init while auth is loading
+    if (authLoading) return;
     
     const initSession = async () => {
       try {
@@ -846,10 +1291,12 @@ function ChatComponent({ className = '' }: ChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); 
   }, [messages]);
 
-  // Keep voiceModeRef in sync
-  useEffect(() => { 
-    voiceModeRef.current = voiceMode; 
-  }, [voiceMode]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupVoice();
+    };
+  }, [cleanupVoice]);
 
   // =========================================================================
   // HANDLERS
@@ -926,13 +1373,6 @@ function ChatComponent({ className = '' }: ChatProps) {
     }
   };
 
-  const getAnimationState = (): 'listening' | 'speaking' | 'loading' | 'idle' => {
-    if (isListening || recorderState.isRecording) return 'listening';
-    if (isSpeaking) return 'speaking';
-    if (isLoading) return 'loading';
-    return 'idle';
-  };
-
   const copyMessage = async (messageId: string, content: string) => {
     try {
       await navigator.clipboard.writeText(content);
@@ -945,77 +1385,13 @@ function ChatComponent({ className = '' }: ChatProps) {
     document.querySelectorAll('audio').forEach(audio => { audio.pause(); audio.currentTime = 0; });
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
     setIsSpeaking(false);
+    setVoiceState('idle');
   };
 
   const clearChat = () => {
     setMessages([]);
     setShowWelcome(true);
     setError(null);
-  };
-
-  const startListening = async () => {
-    if (!voiceModeRef.current) return;
-    setIsListening(true);
-    try { await startRecording(); } catch (err) { setError('Microphone access denied'); setVoiceMode(false); setIsListening(false); }
-  };
-
-  const processVoiceAndContinue = async () => {
-    if (!recorderState.isRecording) return;
-    setIsListening(false);
-    setIsLoading(true);
-    setError(null);
-    setShowWelcome(false);
-
-    try {
-      const audioBlob = await stopRecording();
-      if (!audioBlob) throw new Error('No audio recorded');
-
-      const tempId = `user-${Date.now()}`;
-      setMessages(prev => [...prev, { id: tempId, role: 'user', content: '🎤 Processing...', timestamp: new Date() }]);
-
-      const response = await wordpressClient.sendVoiceMessage(audioBlob, 'onyx');
-      if (!response.success) throw new Error(response.error || 'Failed to process voice');
-
-      setMessages(prev => prev.map(msg => msg.id === tempId ? { ...msg, content: response.user_message || '(Voice message)' } : msg));
-      setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.ai_response || '', timestamp: new Date() }]);
-
-      if (usage) setUsage(prev => prev ? { ...prev, remaining: Math.max(0, prev.remaining - 1) } : null);
-      setIsLoading(false);
-
-      if (response.workouts_logged && response.workouts_logged > 0) {
-        await refreshBetterSelfGap();
-      }
-
-      await fetchBetterSelf();
-
-      if (response.audio && autoSpeak && voiceModeRef.current) await playAudio(response.audio);
-      if (voiceModeRef.current) setTimeout(() => startListening(), 500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Voice processing failed');
-      setMessages(prev => prev.filter(msg => !msg.content.includes('Processing')));
-      setIsLoading(false);
-      if (voiceModeRef.current) setTimeout(() => startListening(), 1000);
-    }
-  };
-
-  const toggleVoiceMode = async () => {
-    unlockAudioForIOS();
-    if (voiceMode) {
-      setVoiceMode(false);
-      voiceModeRef.current = false;
-      setIsListening(false);
-      if (recorderState.isRecording) cancelRecording();
-      stopAllAudio();
-    } else {
-      setVoiceMode(true);
-      voiceModeRef.current = true;
-      setShowWelcome(false);
-      await startListening();
-    }
-  };
-
-  const handleVoiceTap = async () => {
-    if (recorderState.isRecording) await processVoiceAndContinue();
   };
 
   const sendTextMessage = async (text: string) => {
@@ -1060,43 +1436,40 @@ function ChatComponent({ className = '' }: ChatProps) {
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); sendTextMessage(inputText); };
   const handleStarterSelect = (text: string) => { sendTextMessage(text); };
 
-  const getVoiceBannerStyle = () => {
-    if (isListening) return { background: 'linear-gradient(90deg, #dc2626 0%, #BE5103 100%)' };
-    if (isSpeaking) return { background: 'linear-gradient(90deg, #111184 0%, #550000 100%)' };
-    if (isLoading) return { background: 'linear-gradient(90deg, #BE5103 0%, #550000 100%)' };
-    return { background: 'linear-gradient(90deg, #16a34a 0%, #15803d 100%)' };
+  const handleModeChange = (newMode: 'text' | 'voice') => {
+    if (newMode === chatMode) return;
+    
+    // If switching away from voice, cleanup
+    if (chatMode === 'voice') {
+      cleanupVoice();
+      stopAllAudio();
+      setVoiceState('idle');
+    }
+    
+    setChatMode(newMode);
   };
 
   // =========================================================================
   // CONDITIONAL RENDERS (AFTER all hooks)
   // =========================================================================
 
-  // Show loading while auth is checking
   if (authLoading) {
     return <AuthLoadingScreen />;
   }
 
-  // Show error if auth failed
   if (authError) {
     return <AuthErrorScreen error={authError} loginUrl={loginUrl} />;
   }
-
-  // Optional: Require authentication
-  // if (!isAuthenticated) {
-  //   return <LoginRequiredScreen loginUrl={loginUrl} />;
-  // }
 
   // =========================================================================
   // MAIN RENDER
   // =========================================================================
 
-  const animationState = getAnimationState();
-
   return (
     <div className={`flex flex-col h-full relative overflow-hidden ${className}`}>
       {/* Background */}
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at top left, rgba(17, 17, 132, 0.15) 0%, transparent 50%), radial-gradient(ellipse at bottom right, rgba(190, 81, 3, 0.1) 0%, transparent 50%), linear-gradient(160deg, #0d0d0d 0%, #1a1209 25%, #1c1410 50%, #12101a 75%, #0d0d0d 100%)' }} />
-      <HeartbeatLine isActive={voiceMode && (isListening || isSpeaking || isLoading)} />
+      <HeartbeatLine isActive={chatMode === 'voice' && (voiceState === 'listening' || voiceState === 'speaking')} />
 
       {/* Header */}
       <div className="relative flex items-center justify-between p-2 sm:p-4 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, rgba(85, 0, 0, 0.9) 0%, rgba(60, 20, 10, 0.85) 50%, rgba(17, 17, 132, 0.4) 100%)', borderBottom: '1px solid rgba(190, 81, 3, 0.3)' }}>
@@ -1157,22 +1530,9 @@ function ChatComponent({ className = '' }: ChatProps) {
         </div>
       )}
 
-      {voiceMode && (
-        <div className="relative p-4 sm:p-6 text-center text-white backdrop-blur-sm flex flex-col items-center justify-center gap-3 sm:gap-4" style={getVoiceBannerStyle()}>
-          <FitnessLoadingAnimation state={animationState} />
-          {isSpeaking && <SoundWaveAnimation isActive={true} />}
-          <span className="font-medium text-sm sm:text-lg">
-            {isListening && '🎤 Listening... Tap when done speaking'}
-            {isSpeaking && '🔊 Coach is speaking...'}
-            {isLoading && '⏳ Processing your message...'}
-            {!isListening && !isSpeaking && !isLoading && '✅ Ready - Tap to speak'}
-          </span>
-        </div>
-      )}
-
       {/* Messages */}
       <div className="relative flex-1 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4">
-        {showWelcome && messages.length === 0 && !voiceMode && (
+        {showWelcome && messages.length === 0 && chatMode === 'text' && (
           <div className="text-center py-4 sm:py-6">
             <div className="relative w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-3 sm:mb-4">
               <FitnessLoadingAnimation state="idle" />
@@ -1183,6 +1543,18 @@ function ChatComponent({ className = '' }: ChatProps) {
             <p className="text-sm sm:text-base mb-4 sm:mb-6" style={{ color: '#A89080' }}>Your personal AI fitness coach. What's your goal today?</p>
             <DailyTip />
             <ConversationStarters onSelect={handleStarterSelect} />
+          </div>
+        )}
+        
+        {/* Voice Mode Welcome */}
+        {chatMode === 'voice' && messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-8">
+            <p className="text-lg font-semibold mb-2" style={{ color: '#F5E6D3' }}>
+              Voice Chat Mode
+            </p>
+            <p className="text-sm text-center max-w-xs mb-6" style={{ color: '#A89080' }}>
+              Tap the button below to start talking to your coach
+            </p>
           </div>
         )}
         
@@ -1197,7 +1569,7 @@ function ChatComponent({ className = '' }: ChatProps) {
           </div>
         ))}
         
-        {isLoading && !voiceMode && (
+        {isLoading && chatMode === 'text' && (
           <div className="flex justify-start">
             <div className="max-w-[90%] sm:max-w-[85%] rounded-xl sm:rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5F0EB 0%, #EDE5DC 100%)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' }}>
               <TypingIndicator />
@@ -1209,23 +1581,49 @@ function ChatComponent({ className = '' }: ChatProps) {
       </div>
 
       {/* Input Area */}
-      <div className="relative p-2 sm:p-4 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, rgba(85, 0, 0, 0.95) 0%, rgba(40, 20, 10, 0.9) 50%, rgba(17, 17, 132, 0.3) 100%)', borderTop: '1px solid rgba(190, 81, 3, 0.3)' }}>
-        <div className="flex justify-center mb-3 sm:mb-4">
-          <button onClick={voiceMode ? (recorderState.isRecording ? handleVoiceTap : toggleVoiceMode) : toggleVoiceMode} disabled={isLoading && !voiceMode} className="flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 rounded-full text-sm sm:text-lg font-semibold transition-all transform active:scale-95 touch-manipulation" style={{ background: voiceMode ? recorderState.isRecording ? 'linear-gradient(135deg, #dc2626 0%, #BE5103 100%)' : 'linear-gradient(135deg, #550000 0%, #7f1d1d 100%)' : 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', color: '#ffffff', boxShadow: voiceMode ? recorderState.isRecording ? '0 6px 25px rgba(220, 38, 38, 0.5)' : '0 6px 25px rgba(85, 0, 0, 0.5)' : '0 6px 25px rgba(22, 163, 74, 0.5)', WebkitTapHighlightColor: 'transparent' }}>
-            {voiceMode ? (recorderState.isRecording ? (<><MicOff size={20} /><span>Tap to Send</span></>) : (<><PhoneOff size={20} /><span>End Conversation</span></>)) : (<><Phone size={20} /><span>Start Voice Chat</span></>)}
-          </button>
+      <div className="relative p-3 sm:p-4 backdrop-blur-md" style={{ background: 'linear-gradient(90deg, rgba(85, 0, 0, 0.95) 0%, rgba(40, 20, 10, 0.9) 50%, rgba(17, 17, 132, 0.3) 100%)', borderTop: '1px solid rgba(190, 81, 3, 0.3)' }}>
+        
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-4">
+          <ModeToggle mode={chatMode} onModeChange={handleModeChange} />
         </div>
 
-        {!voiceMode && (
+        {/* Voice Mode UI */}
+        {chatMode === 'voice' && (
+          <div className="flex justify-center py-4">
+            <SimpleVoiceButton 
+              voiceState={voiceState}
+              onTap={handleVoiceButtonTap}
+              disabled={isLoading && voiceState !== 'processing'}
+              audioLevel={audioLevel}
+            />
+          </div>
+        )}
+
+        {/* Text Mode UI */}
+        {chatMode === 'text' && (
           <form onSubmit={handleSubmit} className="flex items-center gap-2 sm:gap-3">
-            <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} placeholder="Type a message..." disabled={isLoading} className="flex-1 px-3 sm:px-5 py-2 sm:py-3 rounded-full transition-all focus:outline-none focus:ring-2 text-sm sm:text-base" style={{ background: 'rgba(30, 20, 15, 0.8)', color: '#F5E6D3', border: '1px solid rgba(190, 81, 3, 0.4)' }} />
-            <button type="submit" disabled={!inputText.trim() || isLoading} className="p-2 sm:p-3 rounded-full transition-all disabled:opacity-50 touch-manipulation" style={{ background: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)', color: '#ffffff', boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)', WebkitTapHighlightColor: 'transparent' }}>
+            <input 
+              type="text" 
+              value={inputText} 
+              onChange={(e) => setInputText(e.target.value)} 
+              placeholder="Type a message..." 
+              disabled={isLoading} 
+              className="flex-1 px-3 sm:px-5 py-2 sm:py-3 rounded-full transition-all focus:outline-none focus:ring-2 text-sm sm:text-base" 
+              style={{ background: 'rgba(30, 20, 15, 0.8)', color: '#F5E6D3', border: '1px solid rgba(190, 81, 3, 0.4)' }} 
+            />
+            <button 
+              type="submit" 
+              disabled={!inputText.trim() || isLoading} 
+              className="p-2 sm:p-3 rounded-full transition-all disabled:opacity-50 touch-manipulation" 
+              style={{ background: 'linear-gradient(135deg, #BE5103 0%, #8B3A02 100%)', color: '#ffffff', boxShadow: '0 4px 15px rgba(190, 81, 3, 0.4)', WebkitTapHighlightColor: 'transparent' }}
+            >
               <Send size={18} />
             </button>
           </form>
         )}
 
-        <p className="text-center text-[10px] sm:text-xs mt-2 sm:mt-3 px-2 sm:px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
+        <p className="text-center text-[10px] sm:text-xs mt-3 px-2 sm:px-4" style={{ color: 'rgba(190, 81, 3, 0.6)' }}>
           🤖 BFC AI is very smart, not perfect — Please confirm important info.
         </p>
       </div>
